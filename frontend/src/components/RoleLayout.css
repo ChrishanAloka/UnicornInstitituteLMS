@@ -1,0 +1,28 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.vh-100 {
+  min-height: 100vh;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  transition: all 0.2s ease-in-out;
+}
+
+@media (max-width: 768px) {
+  .bg-dark.d-none {
+    display: none !important;
+  }
+
+  .bg-dark {
+    position: absolute;
+    top: 56px;
+    left: 0;
+    z-index: 1000;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    background-color: #212529 !important;
+  }
+}

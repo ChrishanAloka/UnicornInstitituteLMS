@@ -1,0 +1,80 @@
+.circular-countdown {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.circular-countdown .ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #6f42c1 0%,
+    #28a745 50%,
+    #007bff 100%
+  );
+  mask: radial-gradient(
+    farthest-side at 50% 50%,
+    transparent 90%,
+    black 90%
+  );
+  transform: rotate(-90deg);
+  transition: background 0.5s ease;
+}
+
+.circular-countdown .ring.overdue {
+  background: conic-gradient(
+    from 0deg,
+    #dc3545 0%,
+    #dc3545 100%
+  );
+}
+
+.circular-countdown .time-display {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  z-index: 1;
+  text-align: center;
+  line-height: 1;
+}
+
+.circular-countdown .time-display.overdue {
+  color: #dc3545;
+}
+
+.countdown-ring {
+  width: 40px;
+  height: 40px;
+  position: relative;
+}
+
+.countdown-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* Start from top */
+}
+
+.countdown-ring .ring-bg {
+  stroke: #e9ecef;
+  stroke-width: 4;
+  fill: none;
+}
+
+.countdown-ring .ring-progress {
+  stroke: #007bff;
+  stroke-width: 4;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.countdown-ring .ring-progress.overdue {
+  stroke: #dc3545;
+}

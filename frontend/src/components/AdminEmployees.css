@@ -1,0 +1,18 @@
+#employee-table table {
+  transition: all 0.3s ease-in-out;
+}
+
+#employee-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-danger:hover {
+  transform: scale(1.05);
+  transition: 0.2s ease-in-out;
+}
+
+.table th,
+.table td {
+  vertical-align: middle;
+}
