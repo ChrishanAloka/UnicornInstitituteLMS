@@ -15,7 +15,7 @@ const AdminUsers = () => {
     const fetchUsers = async () => {
       const token = localStorage.getItem("token");
       try {
-        const res = await axios.get("https://projectnuckels.onrender.com/api/auth/users",  {
+        const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/users",  {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUsers(res.data);
@@ -67,7 +67,7 @@ const AdminUsers = () => {
     const token = localStorage.getItem("token");
     try {
       const res = await axios.put(
-        `https://projectnuckels.onrender.com/api/auth/user/${id}/role`, 
+        `https://unicorninstititutelms.onrender.com/api/auth/user/${id}/role`, 
         { role: newRole },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -89,7 +89,7 @@ const AdminUsers = () => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.put(
-      `https://projectnuckels.onrender.com/api/auth/user/${id}/deactivate`,
+      `https://unicorninstititutelms.onrender.com/api/auth/user/${id}/deactivate`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` }
@@ -114,7 +114,7 @@ const AdminUsers = () => {
 
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.put(`https://projectnuckels.onrender.com/api/auth/user/reactivate/${id}`, {}, {
+    const res = await axios.put(`https://unicorninstititutelms.onrender.com/api/auth/user/reactivate/${id}`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     });
 

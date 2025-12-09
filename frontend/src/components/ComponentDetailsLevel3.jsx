@@ -28,7 +28,7 @@ const Level3ComponentDetails = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/level3component", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/level3component", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setComponents(res.data);
@@ -43,7 +43,7 @@ const Level3ComponentDetails = () => {
   const fetchParentComponents = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/level3component/parents", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/level3component/parents", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setParentComponents(res.data);
@@ -100,7 +100,7 @@ const Level3ComponentDetails = () => {
       const token = localStorage.getItem("token");
       const payload = { ...newComp, estimatedAmount: amount };
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/level3component",
+        "https://unicorninstititutelms.onrender.com/api/auth/level3component",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -163,7 +163,7 @@ const Level3ComponentDetails = () => {
       const token = localStorage.getItem("token");
       const payload = { ...editData, estimatedAmount: amount };
       const res = await axios.put(
-        `https://projectnuckels.onrender.com/api/auth/level3component/${editingId}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/level3component/${editingId}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -183,7 +183,7 @@ const Level3ComponentDetails = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/level3component/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/level3component/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setComponents(components.filter(c => c._id !== id));

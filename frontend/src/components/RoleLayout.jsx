@@ -220,7 +220,7 @@ const RoleLayout = () => {
                     boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                   }}
                 />
-                <h3 className="justify-content-left sidebar-title mb-0">Multi-Project Management System</h3>
+                <h3 className="justify-content-left sidebar-title mb-0">UNICORN INSTITUTE LMS</h3>
               </>
             )}
           </div>

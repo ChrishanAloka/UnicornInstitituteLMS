@@ -32,7 +32,7 @@ const MenuManagement = () => {
   const fetchMenus = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/menus", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/menus", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMenus(res.data);
@@ -62,7 +62,7 @@ const MenuManagement = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post("https://projectnuckels.onrender.com/api/auth/menu", formData, {
+      const res = await axios.post("https://unicorninstititutelms.onrender.com/api/auth/menu", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`
@@ -125,7 +125,7 @@ const MenuManagement = () => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.put(
-      `https://projectnuckels.onrender.com/api/auth/menu/${editingMenu}`,
+      `https://unicorninstititutelms.onrender.com/api/auth/menu/${editingMenu}`,
       formData,
       {
         headers: {
@@ -151,7 +151,7 @@ const MenuManagement = () => {
 
   try {
     const token = localStorage.getItem("token");
-    await axios.delete(`https://projectnuckels.onrender.com/api/auth/menu/${id}`, {
+    await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/menu/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     setMenus(menus.filter((menu) => menu._id !== id));
@@ -212,7 +212,7 @@ const MenuManagement = () => {
     const token = localStorage.getItem("token");
 
     const res = await axios.put(
-      `https://projectnuckels.onrender.com/api/auth/menu/${restockMenu._id}`,
+      `https://unicorninstititutelms.onrender.com/api/auth/menu/${restockMenu._id}`,
       {
         minimumQty: updatedAvailableQty,
         currentQty: updatedCurrentQty
@@ -452,7 +452,7 @@ const MenuManagement = () => {
             <div key={menu._id} className="col-md-3 mb-3">
               <div className="card shadow-sm h-100 position-relative">
                 <img
-                  src={`https://projectnuckels.onrender.com${menu.imageUrl}`}
+                  src={`https://unicorninstititutelms.onrender.com${menu.imageUrl}`}
                   alt={menu.name}
                   className="card-img-top"
                   style={{ height: "280px", objectFit: "fill" }}
@@ -601,7 +601,7 @@ const MenuManagement = () => {
                   <img
                     src={
                       editPreview ||
-                      `https://projectnuckels.onrender.com${editData.imageUrl}`
+                      `https://unicorninstititutelms.onrender.com${editData.imageUrl}`
                     }
                     alt="Preview"
                     style={{

@@ -14,7 +14,7 @@ const CashierDashboard = () => {
       const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
       try {
-        const res = await axios.get("https://projectnuckels.onrender.com/api/auth/orders", {
+        const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/orders", {
           params: {
             startDate: startOfDay.toISOString(),
             endDate: endOfDay.toISOString()

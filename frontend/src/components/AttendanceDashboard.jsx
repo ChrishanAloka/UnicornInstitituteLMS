@@ -18,7 +18,7 @@ const AttendanceDashboard = () => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(
-      "https://projectnuckels.onrender.com/api/auth/admin/attendance/monthly-summary",
+      "https://unicorninstititutelms.onrender.com/api/auth/admin/attendance/monthly-summary",
       {
         params: { month, year }, // Ensure these are numbers like 7 and 2025
         headers: { Authorization: `Bearer ${token}` }

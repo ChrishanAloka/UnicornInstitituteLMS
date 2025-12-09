@@ -26,7 +26,7 @@ const ComponentDetails = () => {
     const token = localStorage.getItem("token");
     setLoading(true);
     try {
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/level1component", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/level1component", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setComponents(res.data);
@@ -54,7 +54,7 @@ const ComponentDetails = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/level1component",
+        "https://unicorninstititutelms.onrender.com/api/auth/level1component",
         {
           ...newComponent,
           estimatedAmount: newComponent.estimatedAmount ? Number(newComponent.estimatedAmount) : 0
@@ -101,7 +101,7 @@ const ComponentDetails = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `https://projectnuckels.onrender.com/api/auth/level1component/${editingComponent}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/level1component/${editingComponent}`,
         {
           ...editData,
           estimatedAmount: editData.estimatedAmount ? Number(editData.estimatedAmount) : 0
@@ -131,7 +131,7 @@ const ComponentDetails = () => {
     setLoading(true); // ✅ Start loading
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/level1component/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/level1component/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

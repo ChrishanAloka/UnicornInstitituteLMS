@@ -27,7 +27,7 @@ const KitchenBills = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/kitchen/bills", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/kitchen/bills", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -56,7 +56,7 @@ const KitchenBills = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/kitchen/bill",
+        "https://unicorninstititutelms.onrender.com/api/auth/kitchen/bill",
         newBill,
         {
           headers: {
@@ -114,7 +114,7 @@ const KitchenBills = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `https://projectnuckels.onrender.com/api/auth/kitchen/bill/${editingBill}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/kitchen/bill/${editingBill}`,
         editData,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -137,7 +137,7 @@ const KitchenBills = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/kitchen/bill/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/kitchen/bill/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

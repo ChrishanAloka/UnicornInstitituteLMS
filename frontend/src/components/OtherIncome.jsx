@@ -24,7 +24,7 @@ const Level3ComponentDetails = () => {
 
   const fetchComponents = async () => {
     try {
-      const res = await axios.get("https://projectnuckels.onrender.com/api/project/level3");
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/project/level3");
       setComponents(res.data);
     } catch (err) {
       toast.error("Failed to load Level 3 components");
@@ -33,7 +33,7 @@ const Level3ComponentDetails = () => {
 
   const fetchParentComponents = async () => {
     try {
-      const res = await axios.get("https://projectnuckels.onrender.com/api/project/level3/parents");
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/project/level3/parents");
       setParentComponents(res.data);
     } catch (err) {
       toast.error("Failed to load Level 2 components");
@@ -54,7 +54,7 @@ const Level3ComponentDetails = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/project/level3",
+        "https://unicorninstititutelms.onrender.com/api/project/level3",
         newComp,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -90,7 +90,7 @@ const Level3ComponentDetails = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `https://projectnuckels.onrender.com/api/project/level3/${editingId}`,
+        `https://unicorninstititutelms.onrender.com/api/project/level3/${editingId}`,
         editData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -106,7 +106,7 @@ const Level3ComponentDetails = () => {
     if (!window.confirm("Delete this Level 3 component? This cannot be undone.")) return;
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/project/level3/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/project/level3/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setComponents(components.filter(c => c._id !== id));

@@ -27,7 +27,7 @@ const OtherExpenses = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/expense/other", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/expense/other", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -56,7 +56,7 @@ const OtherExpenses = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/expense/other",
+        "https://unicorninstititutelms.onrender.com/api/auth/expense/other",
         newExpense,
         {
           headers: {
@@ -114,7 +114,7 @@ const OtherExpenses = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `https://projectnuckels.onrender.com/api/auth/expense/other/${editingExpense}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/expense/other/${editingExpense}`,
         editData,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -137,7 +137,7 @@ const OtherExpenses = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/expense/other/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/expense/other/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

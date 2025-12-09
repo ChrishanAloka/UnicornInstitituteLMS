@@ -42,7 +42,7 @@ const KitchenLanding = () => {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("https://projectnuckels.onrender.com/api/auth/orders", {
+        const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(res.data);
@@ -70,7 +70,7 @@ const KitchenLanding = () => {
 
     try {
       await axios.put(
-        `https://projectnuckels.onrender.com/api/auth/order/${id}/status`,
+        `https://unicorninstititutelms.onrender.com/api/auth/order/${id}/status`,
         { status: "Ready" },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -78,7 +78,7 @@ const KitchenLanding = () => {
       );
 
       await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/notifications/send",
+        "https://unicorninstititutelms.onrender.com/api/auth/notifications/send",
         {
           userId: id,
           message: `Order #${id} is ready for pickup.`,

@@ -39,7 +39,7 @@ const TodaySummary = () => {
       const startDate = new Date(today.setHours(0, 0, 0, 0)).toISOString();
       const endDate = new Date(today.setHours(23, 59, 59, 999)).toISOString();
 
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/admin/summary", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/admin/summary", {
         headers: { Authorization: `Bearer ${token}` },
         params: { startDate, endDate }
       });

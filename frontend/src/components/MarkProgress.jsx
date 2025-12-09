@@ -49,14 +49,14 @@ const MarkActivityItemProgress = () => {
       try {
         // Get item details (estimatedAmount)
         const itemRes = await axios.get(
-          `https://projectnuckels.onrender.com/api/auth/level5activityitem/${selectedLevel5}`,
+          `https://unicorninstititutelms.onrender.com/api/auth/level5activityitem/${selectedLevel5}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const estimatedAmount = Number(itemRes.data.estimatedAmount) || 0;
 
         // Get progress
         const progressRes = await axios.get(
-          `https://projectnuckels.onrender.com/api/auth/activityitemsmarkprogress/by-item/${selectedLevel5}`,
+          `https://unicorninstititutelms.onrender.com/api/auth/activityitemsmarkprogress/by-item/${selectedLevel5}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -82,7 +82,7 @@ const MarkActivityItemProgress = () => {
   useEffect(() => {
     const fetchLevel3 = async () => {
       try {
-        const res = await axios.get("https://projectnuckels.onrender.com/api/auth/level3component", {
+        const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/level3component", {
           headers: { Authorization: `Bearer ${token}` }
         });
         setLevel3Components(res.data);
@@ -102,7 +102,7 @@ const MarkActivityItemProgress = () => {
     const fetchLevel4 = async () => {
       try {
         const res = await axios.get(
-          `https://projectnuckels.onrender.com/api/auth/level4activity`,
+          `https://unicorninstititutelms.onrender.com/api/auth/level4activity`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const filtered = res.data.filter(l4 => l4.parentActivity?._id === selectedLevel3);
@@ -123,7 +123,7 @@ const MarkActivityItemProgress = () => {
     const fetchLevel5 = async () => {
       try {
         const res = await axios.get(
-          `https://projectnuckels.onrender.com/api/auth/level5activityitem`,
+          `https://unicorninstititutelms.onrender.com/api/auth/level5activityitem`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const filtered = res.data.filter(l5 => l5.parentItem?._id === selectedLevel4);
@@ -203,7 +203,7 @@ const MarkActivityItemProgress = () => {
       };
 
       await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/activityitemsmarkprogress",
+        "https://unicorninstititutelms.onrender.com/api/auth/activityitemsmarkprogress",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -220,7 +220,7 @@ const MarkActivityItemProgress = () => {
 
       // Refetch progress
       const res = await axios.get(
-        `https://projectnuckels.onrender.com/api/auth/activityitemsmarkprogress/by-item/${selectedLevel5}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/activityitemsmarkprogress/by-item/${selectedLevel5}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setProgressEntries(res.data.entries);

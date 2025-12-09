@@ -10,7 +10,7 @@ const useNotifications = () => {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/notifications", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/notifications", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -35,7 +35,7 @@ const useNotifications = () => {
       const role = localStorage.getItem("userRole") || "cashier";
 
       await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/notifications/send",
+        "https://unicorninstititutelms.onrender.com/api/auth/notifications/send",
         {
           userId, 
           role, 
@@ -61,7 +61,7 @@ const useNotifications = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/notifications/mark-read",
+        "https://unicorninstititutelms.onrender.com/api/auth/notifications/mark-read",
         { notificationId: notifId },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -82,7 +82,7 @@ const useNotifications = () => {
       const role = localStorage.getItem("userRole") || "cashier";
 
       await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/notifications/mark-all-read",
+        "https://unicorninstititutelms.onrender.com/api/auth/notifications/mark-all-read",
         { role },
         {
           headers: { Authorization: `Bearer ${token}` }

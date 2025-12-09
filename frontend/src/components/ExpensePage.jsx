@@ -28,7 +28,7 @@ const ExpensePage = () => {
   const fetchSuppliers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/suppliers", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/suppliers", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuppliers(res.data);
@@ -40,7 +40,7 @@ const ExpensePage = () => {
   const fetchExpenses = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/expenses", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/expenses", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setExpenses(res.data);
@@ -76,8 +76,8 @@ const ExpensePage = () => {
     try {
       const token = localStorage.getItem("token");
       const url = editingId
-        ? `https://projectnuckels.onrender.com/api/auth/expense/${editingId}`
-        : "https://projectnuckels.onrender.com/api/auth/expense/add";
+        ? `https://unicorninstititutelms.onrender.com/api/auth/expense/${editingId}`
+        : "https://unicorninstititutelms.onrender.com/api/auth/expense/add";
 
       const method = editingId ? "put" : "post";
 
@@ -145,7 +145,7 @@ const ExpensePage = () => {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/expense/${deleteId}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/expense/${deleteId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setExpenses(expenses.filter((exp) => exp._id !== deleteId));

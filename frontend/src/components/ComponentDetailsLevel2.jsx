@@ -29,7 +29,7 @@ const Level2ComponentDetails = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/level2component",
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/level2component",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -46,7 +46,7 @@ const Level2ComponentDetails = () => {
   const fetchParentComponents = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/level2component/parents",
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/level2component/parents",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -112,7 +112,7 @@ const Level2ComponentDetails = () => {
         estimatedAmount: amount
       };
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/level2component",
+        "https://unicorninstititutelms.onrender.com/api/auth/level2component",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -181,7 +181,7 @@ const Level2ComponentDetails = () => {
         estimatedAmount: amount
       };
       const res = await axios.put(
-        `https://projectnuckels.onrender.com/api/auth/level2component/${editingId}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/level2component/${editingId}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -202,7 +202,7 @@ const Level2ComponentDetails = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/level2component/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/level2component/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSubComponents(subComponents.filter(s => s._id !== id));

@@ -7,7 +7,7 @@ const KitchenOrderHistory = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/orders", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/orders", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOrders(res.data);

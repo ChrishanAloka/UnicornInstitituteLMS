@@ -17,7 +17,7 @@ const AttendancePage = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/employees", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/employees", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEmployees(res.data);
@@ -43,7 +43,7 @@ const AttendancePage = () => {
 
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "https://projectnuckels.onrender.com/api/auth/attendance/summary",
+        "https://unicorninstititutelms.onrender.com/api/auth/attendance/summary",
         {
           params: { _id: empId, month, year },
           headers: { Authorization: `Bearer ${token}` }
@@ -89,7 +89,7 @@ const AttendancePage = () => {
       };
 
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/attendance/punch",
+        "https://unicorninstititutelms.onrender.com/api/auth/attendance/punch",
         payload,
         {
           headers: {

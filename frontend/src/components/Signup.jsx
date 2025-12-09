@@ -10,6 +10,7 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [key, setKey] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // 👈 Loading state
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,8 +27,10 @@ const Signup = () => {
       return;
     }
 
+    setIsLoading(true); // 👈 Start loading
+
     try {
-      await axios.post("https://projectnuckels.onrender.com/api/auth/signup", {
+      await axios.post("https://unicorninstititutelms.onrender.com/api/auth/signup", {
         name,
         email,
         password,
@@ -39,6 +42,8 @@ const Signup = () => {
       navigate(`/${role}-login`);
     } catch (err) {
       setError(err.response?.data?.error || "Signup failed. Try again.");
+    } finally {
+      setIsLoading(false); // 👈 Stop loading regardless of outcome
     }
   };
 
@@ -103,8 +108,19 @@ const Signup = () => {
 
           {error && <div className="alert alert-danger">{error}</div>}
 
-          <button type="submit" className="btn btn-success w-100 mb-3">
-            Sign Up as {role.charAt(0).toUpperCase() + role.slice(1)}
+          <button
+            type="submit"
+            className="btn btn-success w-100 mb-3"
+            disabled={isLoading} // 👈 Disable during loading
+          >
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Signing Up...
+              </>
+            ) : (
+              `Sign Up as ${role.charAt(0).toUpperCase() + role.slice(1)}`
+            )}
           </button>
         </form>
 

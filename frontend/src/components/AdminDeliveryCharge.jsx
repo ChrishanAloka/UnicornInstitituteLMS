@@ -17,7 +17,7 @@ const AdminDeliveryCharge = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "https://projectnuckels.onrender.com/api/auth/admin/delivery-charge",
+        "https://unicorninstititutelms.onrender.com/api/auth/admin/delivery-charge",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -43,7 +43,7 @@ const AdminDeliveryCharge = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        "https://projectnuckels.onrender.com/api/auth/admin/delivery-charge",
+        "https://unicorninstititutelms.onrender.com/api/auth/admin/delivery-charge",
         deliveryCharge,
         {
           headers: {

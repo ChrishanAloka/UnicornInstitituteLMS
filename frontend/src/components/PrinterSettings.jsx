@@ -20,7 +20,7 @@ const PrinterSettings = () => {
   const fetchSavedPrinters = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://projectnuckels.onrender.com/api/auth/printers", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/printers", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSavedPrinters(res.data);
@@ -76,7 +76,7 @@ const PrinterSettings = () => {
       const payload = { name: selectedPrinter };
       // Don't send ID — we're adding a new one (backend handles dupes via unique name)
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/printers",
+        "https://unicorninstititutelms.onrender.com/api/auth/printers",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -106,7 +106,7 @@ const PrinterSettings = () => {
     if (!window.confirm("Delete this saved printer?")) return;
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/printers/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/printers/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSavedPrinters(savedPrinters.filter(p => p._id !== id));

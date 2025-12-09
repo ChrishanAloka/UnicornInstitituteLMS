@@ -66,6 +66,7 @@ const level4ActivityController = require('../controllers/level4ActivityControlle
 const level5ActivityItemsController = require('../controllers/level5ActivityItemsController');
 const ActivityItemsMarkProgressController = require('../controllers/ActivityItemsMarkProgressController');
 
+const studentController = require('../controllers/studentController');
 
 // Only admin can manage printers (adjust roles as needed)
 router.get("/printers", authMiddleware(["admin", "kitchen", "cashier"]), getPrinters);
@@ -252,5 +253,11 @@ router.delete('/level5activityitem/:id',  authMiddleware(["admin", "user"]), lev
 router.post('/activityitemsmarkprogress/', authMiddleware(["admin", "user"]), ActivityItemsMarkProgressController.markProgress);
 router.get('/activityitemsmarkprogress/by-item/:itemId', authMiddleware(["admin", "user"]), ActivityItemsMarkProgressController.getProgressByItem);
 router.get('/activityitemsmarkprogress/', authMiddleware(["admin", "user"]), ActivityItemsMarkProgressController.getAllProgress); // optional
+
+// All routes are protected
+router.post('/students/register', authMiddleware(["admin", "user"]), studentController.registerStudent);
+router.get('/students/', authMiddleware(["admin", "user"]), studentController.getStudents);
+router.put('/students/:id', authMiddleware(["admin", "user"]), studentController.updateStudent);
+router.delete('/students/:id', authMiddleware(["admin", "user"]), studentController.deleteStudent);
 
 module.exports = router;

@@ -15,7 +15,7 @@ const AdminEmployees = () => {
     const fetchEmployees = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("https://projectnuckels.onrender.com/api/auth/employees", {
+        const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/employees", {
           headers: { Authorization: `Bearer ${token}` }
         });
         setEmployees(res.data);
@@ -76,7 +76,7 @@ const AdminEmployees = () => {
   if (!window.confirm("Are you sure you want to delete this employee?")) return;
 
   axios
-    .delete(`https://projectnuckels.onrender.com/api/auth/employee/${id}`, {
+    .delete(`https://unicorninstititutelms.onrender.com/api/auth/employee/${id}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     })
     .then(() => {

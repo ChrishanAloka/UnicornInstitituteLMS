@@ -18,7 +18,7 @@ const CustomerList = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "https://projectnuckels.onrender.com/api/auth/customers-list",
+        "https://unicorninstititutelms.onrender.com/api/auth/customers-list",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCustomers(res.data);

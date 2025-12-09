@@ -67,7 +67,7 @@ const CashierSummary = () => {
       });
 
       const res = await axios.get(
-        `https://projectnuckels.onrender.com/api/auth/orders?${params.toString()}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/orders?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -86,7 +86,7 @@ const CashierSummary = () => {
   const fetchOtherIncomes = async () => {
     try {
       const res = await axios.get(
-        `https://projectnuckels.onrender.com/api/auth/income/other/by-date?date=${dateFilter}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/income/other/by-date?date=${dateFilter}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setOtherIncomes(res.data);
@@ -102,7 +102,7 @@ const CashierSummary = () => {
   const fetchOtherExpenses = async () => {
     try {
       const res = await axios.get(
-        `https://projectnuckels.onrender.com/api/auth/expense/other/by-date?date=${dateFilter}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/expense/other/by-date?date=${dateFilter}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setOtherExpenses(res.data);
@@ -127,7 +127,7 @@ const CashierSummary = () => {
       const yesterdayStr = `${yyyy}-${mm}-${dd}`;
 
       const res = await axios.get(
-        `https://projectnuckels.onrender.com/api/auth/cashier/shift-summary/${yesterdayStr}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/cashier/shift-summary/${yesterdayStr}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -151,7 +151,7 @@ const CashierSummary = () => {
   const checkExistingSummary = async () => {
     try {
       const res = await axios.get(
-        `https://projectnuckels.onrender.com/api/auth/cashier/shift-summary/${dateFilter}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/cashier/shift-summary/${dateFilter}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -219,7 +219,7 @@ const CashierSummary = () => {
       };
 
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/income/other",
+        "https://unicorninstititutelms.onrender.com/api/auth/income/other",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -262,7 +262,7 @@ const CashierSummary = () => {
       };
 
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/expense/other",
+        "https://unicorninstititutelms.onrender.com/api/auth/expense/other",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -284,7 +284,7 @@ const CashierSummary = () => {
     if (!window.confirm("Are you sure you want to delete this cash in record?")) return;
 
     try {
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/income/other/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/income/other/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -302,7 +302,7 @@ const CashierSummary = () => {
     if (!window.confirm("Are you sure you want to delete this cash out record?")) return;
 
     try {
-      await axios.delete(`https://projectnuckels.onrender.com/api/auth/expense/other/${id}`, {
+      await axios.delete(`https://unicorninstititutelms.onrender.com/api/auth/expense/other/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -413,7 +413,7 @@ const CashierSummary = () => {
       };
 
       const res = await axios.post(
-        "https://projectnuckels.onrender.com/api/auth/cashier/shift-summary/submitshift",
+        "https://unicorninstititutelms.onrender.com/api/auth/cashier/shift-summary/submitshift",
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );

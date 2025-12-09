@@ -1,20 +1,23 @@
 // App.jsx
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from "./components/PageTransition";
+
 import Home from './components/Home';
 import AdminLogin from './components/AdminLogin';
-import CashierLogin from './components/CashierLogin';
-import KitchenLogin from './components/KitchenLogin';
+// import CashierLogin from './components/CashierLogin';
+// import KitchenLogin from './components/KitchenLogin';
 
 import Signup from './components/Signup';
 
-import Printersettings from "./components/PrinterSettings";
+// import Printersettings from "./components/PrinterSettings";
 import DeliveryCharges from "./components/DeliveryCharges";
 
 import KitchenLanding from "./components/KitchenLanding";
 import KitchenBills from "./components/KitchenBills";
 
-import KitchenOrderHistory from "./components/KitchenOrderHistory";
+// import KitchenOrderHistory from "./components/KitchenOrderHistory";
 
 import CashierLanding from "./components/CashierLanding";
 import CashierSummery from "./components/CashierSummery";
@@ -43,22 +46,22 @@ import ResetPassword from "./components/ResetPassword";
 import CurrencySettings from "./components/CurrencySettings";
 
 import AdminEmployees from "./components/AdminEmployees";
-import CustomerList from "./components/CustomerList";
+// import CustomerList from "./components/CustomerList";
 
 import AdminEmployeeRegister from "./components/AdminEmployeeRegister";
 import AdminEmployeeEdit from "./components/AdminEmployeeEdit";
 
-import AttendanceDashboard from "./components/AttendanceDashboard";
-import AddAttendance from "./components/AddAttendance";
+// import AttendanceDashboard from "./components/AttendanceDashboard";
+// import AddAttendance from "./components/AddAttendance";
 
-import ReceiptView from "./components/ReceiptView";
+// import ReceiptView from "./components/ReceiptView";
 
 import SupplierRegistration from "./components/SupplierRegistration";
 import ExpensePage from "./components/ExpensePage";
 import SalaryPage from "./components/SalaryPage";
 
-import AdminKitchenRequests from "./components/AdminKitchenRequests";
-import KitchenRequestForm from "./components/KitchenRequestForm";
+// import AdminKitchenRequests from "./components/AdminKitchenRequests";
+// import KitchenRequestForm from "./components/KitchenRequestForm";
 
 import AdminServiceCharge from "./components/AdminServiceCharge";
 import AdminDeliveryCharge from "./components/AdminDeliveryCharge";
@@ -76,115 +79,112 @@ import ComponentDetailsLevel3 from "./components/ComponentDetailsLevel3";
 import ComponentDetailsLevel4 from "./components/ComponentDetailsLevel4";
 import ComponentDetailsLevel5 from "./components/ComponentDetailsLevel5";
 
+import StudentRegistration from "./components/StudentRegistration";
+
+
 
 <Route path="/unauthorized" element={<Unauthorized />} />
 
 function App() {
   
+  const location = useLocation(); // ⭐ Required for animations
+
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/admin-login" element={<AdminLogin />} />
-      <Route path="/cashier-login" element={<CashierLogin />} />
-      <Route path="/kitchen-login" element={<KitchenLogin />} />
+    <AnimatePresence mode="wait">
+      <PageTransition key={location.pathname}>
+        <Routes location={location}>
 
-      <Route path="/user-login" element={<UserLogin />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
 
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
-      
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/unauthorized" element={<Unauthorized />} />
-      
-      <Route
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <RoleLayout />  {/* Wrap inside layout */}
-          </ProtectedRoute>
-        }
-      >
-        <Route index path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/signup-key" element={<AdminSignupKey />} />
-        <Route path="/admin/employees" element={<AdminEmployees />} />
-        <Route path="/admin/customers" element={<CustomerList />} />
-        
-        <Route path="/admin/employee/new" element={<AdminEmployeeRegister />} />
-        <Route path="/admin/employee/edit/:id" element={<AdminEmployeeEdit />} />
+          <Route path="/user-login" element={<UserLogin />} />
 
-        <Route path="/admin/attendance" element={<AttendanceDashboard />} />
-        <Route path="/admin/attendance/add" element={<AddAttendance />} />
-        <Route path="/admin/suppliers" element={<SupplierRegistration />} />
-        <Route path="/admin/expenses" element={<ExpensePage />} />
-        <Route path="/admin/salaries" element={<SalaryPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <RoleLayout />  {/* Wrap inside layout */}
+              </ProtectedRoute>
+            }
+          >
+            <Route index path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/signup-key" element={<AdminSignupKey />} />
+            <Route path="/admin/employees" element={<AdminEmployees />} />
+            
+            <Route path="/admin/employee/new" element={<AdminEmployeeRegister />} />
+            <Route path="/admin/employee/edit/:id" element={<AdminEmployeeEdit />} />
+
+            <Route path="/admin/suppliers" element={<SupplierRegistration />} />
+            <Route path="/admin/expenses" element={<ExpensePage />} />
+            <Route path="/admin/salaries" element={<SalaryPage />} />
 
 
-        <Route path="/admin/currency" element={<CurrencySettings />} />
-        <Route path="/admin/kitchen-requests" element={<AdminKitchenRequests />} />
-        <Route path="/admin/service-charge" element={<AdminServiceCharge />} />
-        <Route path="/admin/delivery-charge" element={<AdminDeliveryCharge />} />
-        
-        <Route path="/admin/delivery-charges" element={<DeliveryCharges />} />
+            <Route path="/admin/currency" element={<CurrencySettings />} />
+            <Route path="/admin/service-charge" element={<AdminServiceCharge />} />
+            <Route path="/admin/delivery-charge" element={<AdminDeliveryCharge />} />
+            
+            <Route path="/admin/delivery-charges" element={<DeliveryCharges />} />
 
-      </Route>
-      
-      <Route
-        element={
-          <ProtectedRoute allowedRoles={["admin", "cashier", "kitchen"]}>
-            <RoleLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/kitchen" element={<KitchenLanding />} />
-        <Route path="/kitchen/history" element={<KitchenOrderHistory />} />
-        <Route path="/kitchen/kitchen-requestsForm" element={<KitchenRequestForm />} />
-        <Route path="/kitchen/attendance/add" element={<AddAttendance />} />
+          </Route>
+          
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["admin", "cashier", "kitchen"]}>
+                <RoleLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/kitchen" element={<KitchenLanding />} />
+            <Route path="/:role/menu" element={<MenuManagement />} />
+            <Route path="/:role/report" element={<MonthlyReport />} />
+            <Route path="/:role/bills" element={<KitchenBills />} /> 
 
-        <Route path="/:role/menu" element={<MenuManagement />} />
-        <Route path="/:role/report" element={<MonthlyReport />} />
-        <Route path="/:role/bills" element={<KitchenBills />} /> 
 
-        <Route path="/printer-settings" element={<Printersettings />} />
-        <Route path="/orders/receipt/:id" element={<ReceiptView />} />
+          </Route>
 
-      </Route>
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["admin", "cashier"]}>
+                <RoleLayout />
+              </ProtectedRoute>
+            }
+          >
 
-      <Route
-        element={
-          <ProtectedRoute allowedRoles={["admin", "cashier"]}>
-            <RoleLayout />
-          </ProtectedRoute>
-        }
-      >
-
-        <Route path="/cashier" element={<CashierLanding />} />
-        <Route path="/cashier-summery" element={<CashierSummery />} />
-        <Route path="/cashier/orders" element={<CashierOrderHistory />} />
-        <Route path="/cashier/today" element={<CashierDashboard />} />
-        <Route path="/cashier/takeaway-orders" element={<TakeawayOrdersPage />} />
-        <Route path="/cashier/driver-register" element={<RegisterDriverPage />} />
-        <Route path="/cashier/attendance/add" element={<AddAttendance />} />
-        <Route path="/cashier/other-expences" element={<OtherExpenses />} />
-        <Route path="/cashier/other-income" element={<OtherIncome />} />
-      </Route>
-      
-      <Route
-        element={
-          <ProtectedRoute allowedRoles={["user"]}>
-            <RoleLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/user" element={<MarkProgress />} />
-        <Route path="/user/comp-Level1" element={<ComponentDetailsLevel1 />} />
-        <Route path="/user/comp-Level2" element={<ComponentDetailsLevel2 />} />
-        <Route path="/user/comp-Level3" element={<ComponentDetailsLevel3 />} />
-        <Route path="/user/comp-Level4" element={<ComponentDetailsLevel4 />} />
-        <Route path="/user/comp-Level5" element={<ComponentDetailsLevel5 />} />
-        
-      </Route>
-      
-    </Routes>
+            <Route path="/cashier" element={<CashierLanding />} />
+            <Route path="/cashier-summery" element={<CashierSummery />} />
+            <Route path="/cashier/orders" element={<CashierOrderHistory />} />
+            <Route path="/cashier/today" element={<CashierDashboard />} />
+            <Route path="/cashier/takeaway-orders" element={<TakeawayOrdersPage />} />
+            <Route path="/cashier/driver-register" element={<RegisterDriverPage />} />
+            <Route path="/cashier/other-expences" element={<OtherExpenses />} />
+            <Route path="/cashier/other-income" element={<OtherIncome />} />
+          </Route>
+          
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["user"]}>
+                <RoleLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/user" element={<StudentRegistration />} />
+            <Route path="/user/comp-Level1" element={<ComponentDetailsLevel1 />} />
+            <Route path="/user/comp-Level2" element={<ComponentDetailsLevel2 />} />
+            <Route path="/user/comp-Level3" element={<ComponentDetailsLevel3 />} />
+            <Route path="/user/comp-Level4" element={<ComponentDetailsLevel4 />} />
+            <Route path="/user/comp-Level5" element={<ComponentDetailsLevel5 />} />
+            
+          </Route>
+          
+        </Routes>
+      </PageTransition>
+    </AnimatePresence>
   );
 }
 
