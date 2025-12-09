@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema({
   courseName: { type: String, required: true, trim: true },
-  courseDate: { type: Date, required: true },
+  dayOfWeek: { 
+    type: String, 
+    required: true,
+  },
   timeFrom: { type: String, required: true }, // e.g., "10:00"
   timeTo: { type: String, required: true },   // e.g., "12:00"
   description: { type: String, trim: true },
