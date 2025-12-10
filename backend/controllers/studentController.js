@@ -1,5 +1,73 @@
 // controllers/studentController.js
 const Student = require('../models/Student');
+const Attendance = require('../models/Attendance');
+
+// @desc    Search student by ID or name + check attendance for a date
+// @route   GET /api/auth/student/search?q=...&date=YYYY-MM-DD
+// @access  Private
+exports.searchStudent = async (req, res) => {
+  try {
+    const { q, date } = req.query;
+
+    // Validate query
+    if (!q) {
+      return res.status(400).json({ error: 'Search query "q" is required' });
+    }
+
+    // Validate date (optional, defaults to today)
+    let searchDate = date ? new Date(date) : new Date();
+    if (isNaN(searchDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    // Find student by ID or name (case-insensitive)
+    const student = await Student.findOne({
+      $or: [
+        { studentId: { $regex: new RegExp(`^${q}$`, 'i') } }, // Exact match for ID
+        { name: { $regex: q, $options: 'i' } }                // Partial match for name
+      ]
+    }).populate('enrolledCourses.course', 'courseName dayOfWeek timeFrom timeTo');
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    // Fetch attendance records for this student on the given date
+    const attendanceRecords = await Attendance.find({
+      studentId: student.studentId,
+      date: {
+        $gte: new Date(searchDate.setHours(0, 0, 0, 0)),
+        $lt: new date.sethours(23, 59, 59, 999)
+      }
+    }).select('course');
+
+    // Create a Set of marked course IDs (as strings)
+    const markedCourseIds = new Set(
+      attendanceRecords.map(record => record.course.toString())
+    );
+
+    // Attach isMarked flag to each enrolled course
+    const enrolledWithStatus = student.enrolledCourses.map(enroll => {
+      // Ensure we have a valid course object
+      if (!enroll.course) {
+        return { ...enroll.toObject(), isMarked: false };
+      }
+      return {
+        ...enroll.toObject(),
+        isMarked: markedCourseIds.has(enroll.course._id.toString())
+      };
+    });
+
+    // Prepare response
+    const studentResponse = student.toObject();
+    studentResponse.enrolledCourses = enrolledWithStatus;
+
+    res.json(studentResponse);
+  } catch (error) {
+    console.error('Student search error:', error);
+    res.status(500).json({ error: 'Server error during student search' });
+  }
+};
 
 // @desc    Register a new student
 // @route   POST /api/auth/student/register
@@ -93,22 +161,6 @@ exports.deleteStudent = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete student' });
   }
-};
-
-// GET /api/auth/student/search?q=...
-exports.searchStudent = async (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.status(400).json({ error: "Query required" });
-
-  const student = await Student.findOne({
-    $or: [
-      { studentId: { $regex: q, $options: "i" } },
-      { name: { $regex: q, $options: "i" } }
-    ]
-  }).populate("enrolledCourses.course", "courseName dayOfWeek timeFrom timeTo");
-
-  if (!student) return res.status(404).json({ error: "Not found" });
-  res.json(student);
 };
 
 // GET /api/auth/student/:studentId/courses
