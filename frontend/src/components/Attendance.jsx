@@ -69,6 +69,7 @@ const Attendance = () => {
 
   const handleMarkAttendance = async (courseId) => {
     if (!student || !selectedDate) return;
+    console.log("courseId:", courseId);
     try {
       const token = localStorage.getItem("token");
       await axios.post(
@@ -161,7 +162,7 @@ const Attendance = () => {
             <div className="input-group">
               <input
                 type="text"
-                className="form-control form-control-lg"
+                className="form-control"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Type ID/name or scan QR"
@@ -187,7 +188,7 @@ const Attendance = () => {
             <input
               type="date"
               max={new Date().toISOString().split("T")[0]}
-              className="form-control form-control-lg"
+              className="form-control"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
             />
@@ -195,7 +196,7 @@ const Attendance = () => {
           <div className="col-md-3 d-flex align-items-end">
             <div className="w-100 text-center p-2 bg-light rounded">
               <small className="text-muted">
-                Selected: {formatDateDisplay(selectedDate)}
+                Today: {new Date().toISOString().split("T")[0]}
               </small>
             </div>
           </div>

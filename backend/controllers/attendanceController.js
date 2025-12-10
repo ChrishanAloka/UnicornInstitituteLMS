@@ -58,8 +58,6 @@ exports.getStudentAttendanceData = async (req, res) => {
 };
 
 // POST /api/auth/attendance/mark
-// controllers/attendanceController.js
-const Attendance = require('../models/Attendance');
 
 exports.markAttendance = async (req, res) => {
   try {
