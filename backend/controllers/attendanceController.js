@@ -58,9 +58,30 @@ exports.getStudentAttendanceData = async (req, res) => {
 };
 
 // POST /api/auth/attendance/mark
+// controllers/attendanceController.js
+const Attendance = require('../models/Attendance');
+
 exports.markAttendance = async (req, res) => {
-  const { studentId, courseId, date, status } = req.body;
-  const record = new Attendance({ student: studentId, course: courseId, date, status });
-  await record.save();
-  res.json({ success: true });
+  try {
+    const { studentId, courseId, date, status } = req.body;
+
+    // Optional: Check if already marked
+    const existing = await Attendance.findOne({ studentId, courseId, date });
+    if (existing) {
+      return res.status(400).json({ error: 'Attendance already marked for this date' });
+    }
+
+    const record = new Attendance({
+      student: studentId, // or studentId if using String
+      course: courseId,
+      date: new Date(date), // Convert string to Date
+      status
+    });
+
+    await record.save();
+    res.json({ success: true, message: 'Attendance marked' });
+  } catch (error) {
+    console.error('Attendance error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 };

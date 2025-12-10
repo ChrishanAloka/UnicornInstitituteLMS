@@ -6,11 +6,13 @@ import { ToastContainer, toast } from "react-toastify";
 const StudentProfile = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [student, setStudent] = useState(null);
-  const [courses, setCourses] = useState([]); // all available courses
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
 
-  // Load all courses once
+  // For enrollment: track open date fields per course
+  const [dateInputs, setDateInputs] = useState({}); // { courseId: { startDate, endDate } }
+
   useEffect(() => {
     fetchAllCourses();
   }, []);
@@ -54,39 +56,51 @@ const StudentProfile = () => {
     }
   };
 
+  // Toggle date fields for a course
+  const toggleDateFields = (courseId) => {
+    setDateInputs(prev => ({
+      ...prev,
+      [courseId]: prev[courseId] ? null : { startDate: "", endDate: "" }
+    }));
+  };
+
+  // Update date values
+  const handleDateChange = (courseId, field, value) => {
+    setDateInputs(prev => ({
+      ...prev,
+      [courseId]: { ...prev[courseId], [field]: value }
+    }));
+  };
+
   const handleEnroll = async (courseId) => {
-    const course = courses.find(c => c._id === courseId);
-    if (!course) return;
-
-    const startDate = prompt("Enter start date (YYYY-MM-DD) - optional:");
-    const endDate = prompt("Enter end date (YYYY-MM-DD) - optional:");
-
+    const dates = dateInputs[courseId] || {};
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
         `https://unicorninstititutelms.onrender.com/api/auth/students/enroll/${student._id}`,
         {
           courseId,
-          startDate: startDate || undefined,
-          endDate: endDate || undefined
+          startDate: dates.startDate || undefined,
+          endDate: dates.endDate || undefined
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setEnrolledCourses(res.data.enrolledCourses);
-      toast.success(`Enrolled in ${course.courseName}`);
+      setDateInputs(prev => ({ ...prev, [courseId]: null })); // close after enroll
+      toast.success("Enrolled successfully!");
     } catch (err) {
       toast.error("Enrollment failed");
     }
   };
 
-  const handleUnenroll = async (enrollmentId) => {
+  const handleUnenroll = async (studentId, enrollmentId) => {
     if (!window.confirm("Unenroll from this course?")) return;
     try {
       const token = localStorage.getItem("token");
       const res = await axios.delete(
-        `https://unicorninstititutelms.onrender.com/api/auth/student/${student._id}/unenroll/${enrollmentId}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/unenroll/${enrollmentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
-        );
+      );
       setEnrolledCourses(res.data.enrolledCourses);
       toast.success("Unenrolled successfully");
     } catch (err) {
@@ -94,7 +108,6 @@ const StudentProfile = () => {
     }
   };
 
-  // Format date for display
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString();
@@ -126,7 +139,6 @@ const StudentProfile = () => {
         </div>
       </form>
 
-      {/* Student Details */}
       {student && (
         <div className="mb-5 p-4 bg-white shadow-sm rounded border">
           <h4 className="mb-3">Student Details</h4>
@@ -146,77 +158,107 @@ const StudentProfile = () => {
         </div>
       )}
 
-      {/* Enroll Section */}
       {student && (
         <>
           <h4 className="mb-3 text-secondary">Enroll in Course</h4>
-          <div className="row g-3 mb-4">
-            {courses
-              .filter(c => !enrolledCourses.some(e => e.course._id === c._id))
-              .map(course => (
-                <div className="col-md-6 col-lg-4" key={course._id}>
-                  <div className="card h-100">
-                    <div className="card-body">
-                      <h6>{course.courseName}</h6>
-                      <p className="text-muted small">
-                        {course.dayOfWeek?.charAt(0).toUpperCase() + course.dayOfWeek?.slice(1)} • 
-                        {course.timeFrom}–{course.timeTo}
-                      </p>
+          {courses
+            .filter(c => !enrolledCourses.some(e => e.course._id === c._id))
+            .map(course => (
+              <div className="card mb-3" key={course._id}>
+                <div className="card-body d-flex flex-wrap justify-content-between align-items-start">
+                  <div>
+                    <h6 className="mb-1">{course.courseName}</h6>
+                    <p className="text-muted small mb-0">
+                      {course.dayOfWeek?.charAt(0).toUpperCase() + course.dayOfWeek?.slice(1)} • 
+                      {course.timeFrom}–{course.timeTo}
+                    </p>
+                  </div>
+                  <div className="mt-2 mt-md-0">
+                    {!dateInputs[course._id] ? (
                       <button
-                        className="btn btn-sm btn-success"
-                        onClick={() => handleEnroll(course._id)}
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => toggleDateFields(course._id)}
                       >
-                        ➕ Enroll
+                        📅 Set Dates (Optional)
                       </button>
-                    </div>
+                    ) : (
+                      <div className="d-flex flex-column flex-md-row gap-2">
+                        <input
+                          type="date"
+                          className="form-control form-control-sm"
+                          value={dateInputs[course._id].startDate}
+                          onChange={(e) => handleDateChange(course._id, 'startDate', e.target.value)}
+                          placeholder="Start Date"
+                        />
+                        <input
+                          type="date"
+                          className="form-control form-control-sm"
+                          value={dateInputs[course._id].endDate}
+                          onChange={(e) => handleDateChange(course._id, 'endDate', e.target.value)}
+                          placeholder="End Date"
+                        />
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => handleEnroll(course._id)}
+                        >
+                          ➕ Enroll
+                        </button>
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => toggleDateFields(course._id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
-          </div>
+              </div>
+            ))
+          }
 
-          {/* Enrolled Courses */}
-          <h4 className="mb-3 text-secondary">Enrolled Courses</h4>
-          {enrolledCourses.length === 0 ? (
-            <p className="text-muted">No courses enrolled.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead className="table-light">
-                  <tr>
-                    <th>Course</th>
-                    <th>Day & Time</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {enrolledCourses.map(enroll => (
-                    <tr key={enroll._id}>
-                      <td>{enroll.course?.courseName || "—"}</td>
-                      <td>
-                        {enroll.course?.dayOfWeek && (
-                          <>
-                            {enroll.course.dayOfWeek.charAt(0).toUpperCase() + enroll.course.dayOfWeek.slice(1)} • 
-                            {enroll.course.timeFrom}–{enroll.course.timeTo}
-                          </>
-                        )}
-                      </td>
-                      <td>{formatDate(enroll.startDate)}</td>
-                      <td>{formatDate(enroll.endDate)}</td>
-                      <td>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleUnenroll(enroll._id)}
-                        >
-                          🗑️ Unenroll
-                        </button>
-                      </td>
+          {enrolledCourses.length === 0 ? null : (
+            <>
+              <h4 className="mb-3 text-secondary mt-5">Enrolled Courses</h4>
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Course</th>
+                      <th>Day & Time</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
+                      <th>Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {enrolledCourses.map(enroll => (
+                      <tr key={enroll._id}>
+                        <td>{enroll.course?.courseName || "—"}</td>
+                        <td>
+                          {enroll.course?.dayOfWeek && (
+                            <>
+                              {enroll.course.dayOfWeek.charAt(0).toUpperCase() + enroll.course.dayOfWeek.slice(1)} • 
+                              {enroll.course.timeFrom}–{enroll.course.timeTo}
+                            </>
+                          )}
+                        </td>
+                        <td>{formatDate(enroll.startDate)}</td>
+                        <td>{formatDate(enroll.endDate)}</td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleUnenroll(student._id, enroll._id)}
+                          >
+                            🗑️ Unenroll
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </>
       )}

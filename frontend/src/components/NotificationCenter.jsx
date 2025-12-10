@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import useNotifications from "../hooks/useNotification";
+// import useNotifications from "../hooks/useNotification";
 import { FaBell, FaRegBell } from "react-icons/fa";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 
 const NotificationCenter = () => {
-  const {
-    notifications,
-    unreadCount,
-    userRole,
-    markAsRead,
-    markAllAsRead
-  } = useNotifications();
+  // const {
+  //   notifications,
+  //   unreadCount,
+  //   userRole,
+  //   markAsRead,
+  //   markAllAsRead
+  // } = useNotifications();
 
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef();
@@ -40,7 +40,7 @@ const NotificationCenter = () => {
 
   return (
     <div className="position-relative">
-      {/* Bell Icon */}
+      Bell Icon
       <button
         onClick={toggleDropdown}
         style={{
@@ -51,7 +51,7 @@ const NotificationCenter = () => {
         }}
         type="button"
       >
-        {unreadCount > 0 ? <FaBell /> : <FaRegBell />}
+        {/* {unreadCount > 0 ? <FaBell /> : <FaRegBell />}
         {unreadCount > 0 && (
           <span
             style={{
@@ -67,7 +67,7 @@ const NotificationCenter = () => {
           >
             {unreadCount}
           </span>
-        )}
+        )} */}
       </button>
 
       {/* Dropdown Content */}
