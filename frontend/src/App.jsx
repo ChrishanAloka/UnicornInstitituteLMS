@@ -80,8 +80,12 @@ import ComponentDetailsLevel4 from "./components/ComponentDetailsLevel4";
 import ComponentDetailsLevel5 from "./components/ComponentDetailsLevel5";
 
 import StudentRegistration from "./components/StudentRegistration";
+import InstructorRegistration from "./components/InstructorRegistration";
+import CourseRegistration from "./components/CourseRegistration";
+import ClassTimetable from "./components/ClassTimetable";
 
-
+import Attendance from "./components/Attendance";
+import StudentProfile from "./components/StudentProfile";
 
 <Route path="/unauthorized" element={<Unauthorized />} />
 
@@ -174,10 +178,10 @@ function App() {
             }
           >
             <Route path="/user" element={<StudentRegistration />} />
-            <Route path="/user/comp-Level1" element={<ComponentDetailsLevel1 />} />
-            <Route path="/user/comp-Level2" element={<ComponentDetailsLevel2 />} />
-            <Route path="/user/comp-Level3" element={<ComponentDetailsLevel3 />} />
-            <Route path="/user/comp-Level4" element={<ComponentDetailsLevel4 />} />
+            <Route path="/user/comp-Level1" element={<InstructorRegistration />} />
+            <Route path="/user/comp-Level2" element={<CourseRegistration />} />
+            <Route path="/user/comp-Level3" element={<Attendance />} />
+            <Route path="/user/comp-Level4" element={<StudentProfile />} />
             <Route path="/user/comp-Level5" element={<ComponentDetailsLevel5 />} />
             
           </Route>

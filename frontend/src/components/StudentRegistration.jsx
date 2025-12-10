@@ -60,7 +60,7 @@ const StudentRegistration = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "https://unicorninstititutelms.onrender.com/api/auth/student/register",
+        "https://unicorninstititutelms.onrender.com/api/auth/students/register",
         { ...newStudent, studentId },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -85,11 +85,21 @@ const StudentRegistration = () => {
   };
 
   const openEditModal = (student) => {
+    // Helper to format date from ISO to YYYY-MM-DD
+    const formatDateForInput = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        // Use UTC to avoid timezone shifting the day
+        return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .split("T")[0];
+    };
+    
     setEditingStudent(student._id);
     setEditData({
       studentId: student.studentId,
       name: student.name,
-      birthday: student.birthday,
+      birthday: formatDateForInput(student.birthday),
       address: student.address,
       school: student.school,
       currentGrade: student.currentGrade,
@@ -112,7 +122,7 @@ const StudentRegistration = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `https://unicorninstititutelms.onrender.com/api/auth/student/${editingStudent}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/students/${editingStudent}`,
         editData,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -131,7 +141,7 @@ const StudentRegistration = () => {
     if (!window.confirm("Are you sure you want to delete this student?")) return;
 
     axios
-      .delete(`https://unicorninstititutelms.onrender.com/api/auth/student/${id}`, {
+      .delete(`https://unicorninstititutelms.onrender.com/api/auth/students/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       })
       .then(() => {

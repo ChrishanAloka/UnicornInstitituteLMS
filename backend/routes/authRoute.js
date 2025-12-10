@@ -29,8 +29,6 @@ const employeeController = require("../controllers/employeeController");
 
 const currencyController = require("../controllers/currencyController");
 
-const attendanceController = require("../controllers/attendanceController");
-
 const supplierController = require("../controllers/supplierController");
 const expenseController = require("../controllers/expenseController");
 const salaryController = require("../controllers/salaryController");
@@ -69,6 +67,7 @@ const ActivityItemsMarkProgressController = require('../controllers/ActivityItem
 const studentController = require('../controllers/studentController');
 const courseController = require('../controllers/courseController');
 const instructorController = require('../controllers/instructorController');
+const attendanceController = require("../controllers/attendanceController");
 const enrollmentController = require('./controllers/enrollmentController');
 
 
