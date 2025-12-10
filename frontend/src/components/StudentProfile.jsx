@@ -84,9 +84,9 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.delete(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/unenroll/${enrollmentId}`,
+        `https://unicorninstititutelms.onrender.com/api/auth/student/${student._id}/unenroll/${enrollmentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
-      );
+        );
       setEnrolledCourses(res.data.enrolledCourses);
       toast.success("Unenrolled successfully");
     } catch (err) {

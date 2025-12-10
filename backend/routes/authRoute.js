@@ -259,7 +259,7 @@ router.delete('/students/:id', authMiddleware(["admin", "user"]), studentControl
 router.get('/students/search', authMiddleware(["admin", "user"]), studentController.searchStudent);
 router.get('/students/:studentId/courses', authMiddleware(["admin", "user"]), studentController.getStudentWithCourses);
 router.post('/students/enroll/:studentId', authMiddleware(["admin", "user"]), studentController.enrollStudent);
-router.delete('/students/unenroll/:enrollmentId', authMiddleware(["admin", "user"]), studentController.unenrollStudent);
+router.delete('/students/:studentId/unenroll/:enrollmentId', authMiddleware(["admin", "user"]), studentController.unenrollStudent);
 
 // Instructors
 router.post('/instructor/register', authMiddleware(["admin", "user"]), instructorController.registerInstructor);
