@@ -57,17 +57,10 @@ exports.getStudentAttendanceData = async (req, res) => {
   });
 };
 
-// POST /api/auth/attendance
+// POST /api/auth/attendance/mark
 exports.markAttendance = async (req, res) => {
-  const { studentId, courseId, date } = req.body;
-  const student = await Student.findOne({ studentId });
-  if (!student) return res.status(404).json({ error: 'Student not found' });
-
-  const attendance = new Attendance({
-    student: student._id,
-    course: courseId,
-    date: new Date(date)
-  });
-  await attendance.save();
-  res.status(201).json({ message: 'Attendance marked' });
+  const { studentId, courseId, date, status } = req.body;
+  const record = new Attendance({ student: studentId, course: courseId, date, status });
+  await record.save();
+  res.json({ success: true });
 };

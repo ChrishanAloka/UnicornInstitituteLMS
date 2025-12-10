@@ -45,17 +45,6 @@ exports.getStudents = async (req, res) => {
   }
 };
 
-exports.getStudentById = async (req, res) => {
-  try {
-    const student = await Student.findById(req.params.id)
-      .populate('enrolledCourses.course', 'courseName dayOfWeek timeFrom timeTo');
-    if (!student) return res.status(404).json({ error: 'Not found' });
-    res.json(student);
-  } catch (err) {
-    res.status(500).json({ error: 'Fetch failed' });
-  }
-};
-
 // @desc    Update a student
 // @route   PUT /api/auth/student/:id
 // @access  Private
@@ -104,4 +93,47 @@ exports.deleteStudent = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete student' });
   }
+};
+
+// GET /api/auth/student/search?q=...
+exports.searchStudent = async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.status(400).json({ error: "Query required" });
+
+  const student = await Student.findOne({
+    $or: [
+      { studentId: { $regex: q, $options: "i" } },
+      { name: { $regex: q, $options: "i" } }
+    ]
+  }).populate("enrolledCourses.course", "courseName dayOfWeek timeFrom timeTo");
+
+  if (!student) return res.status(404).json({ error: "Not found" });
+  res.json(student);
+};
+
+// GET /api/auth/student/:studentId/courses
+exports.getStudentWithCourses = async (req, res) => {
+  const student = await Student.findById(req.params.studentId)
+    .populate("enrolledCourses.course", "courseName dayOfWeek timeFrom timeTo");
+  if (!student) return res.status(404).json({ error: "Student not found" });
+  res.json({ student, enrolledCourses: student.enrolledCourses || [] });
+};
+
+// Enroll
+exports.enrollStudent = async (req, res) => {
+  const { courseId, startDate, endDate } = req.body;
+  const student = await Student.findById(req.params.studentId);
+  student.enrolledCourses.push({ course: courseId, startDate, endDate });
+  await student.save();
+  await student.populate("enrolledCourses.course", "courseName dayOfWeek timeFrom timeTo");
+  res.json({ enrolledCourses: student.enrolledCourses });
+};
+
+// Unenroll
+exports.unenrollStudent = async (req, res) => {
+  const student = await Student.findById(req.params.studentId);
+  student.enrolledCourses = student.enrolledCourses.filter(e => e._id.toString() !== req.params.enrollmentId);
+  await student.save();
+  await student.populate("enrolledCourses.course", "courseName dayOfWeek timeFrom timeTo");
+  res.json({ enrolledCourses: student.enrolledCourses });
 };

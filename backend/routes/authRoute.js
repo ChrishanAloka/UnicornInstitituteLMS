@@ -68,7 +68,6 @@ const studentController = require('../controllers/studentController');
 const courseController = require('../controllers/courseController');
 const instructorController = require('../controllers/instructorController');
 const attendanceController = require("../controllers/attendanceController");
-const enrollmentController = require('../controllers/enrollmentController');
 
 
 // Only admin can manage printers (adjust roles as needed)
@@ -255,9 +254,12 @@ router.get('/activityitemsmarkprogress/', authMiddleware(["admin", "user"]), Act
 // All routes are protected
 router.post('/students/register', authMiddleware(["admin", "user"]), studentController.registerStudent);
 router.get('/students/', authMiddleware(["admin", "user"]), studentController.getStudents);
-router.get('/students/:id', authMiddleware(["admin", "user"]), studentController.getStudentById);
 router.put('/students/:id', authMiddleware(["admin", "user"]), studentController.updateStudent);
 router.delete('/students/:id', authMiddleware(["admin", "user"]), studentController.deleteStudent);
+router.get('/students/search', authMiddleware(["admin", "user"]), studentController.searchStudent);
+router.get('/students/:studentId/courses', authMiddleware(["admin", "user"]), studentController.getStudentWithCourses);
+router.post('/students/enroll/:studentId', authMiddleware(["admin", "user"]), studentController.enrollStudent);
+router.delete('/students/unenroll/:enrollmentId', authMiddleware(["admin", "user"]), studentController.unenrollStudent);
 
 // Instructors
 router.post('/instructor/register', authMiddleware(["admin", "user"]), instructorController.registerInstructor);
@@ -272,10 +274,8 @@ router.put('/course/:id', authMiddleware(["admin", "user"]), courseController.up
 router.delete('/course/:id', authMiddleware(["admin", "user"]), courseController.deleteCourse);
 
 // Attendance Routes
-router.post("/attendance", authMiddleware(["admin", "user"]), attendanceController.markAttendance);
+router.post("/attendance/mark", authMiddleware(["admin", "user"]), attendanceController.markAttendance);
 router.get("/attendance", authMiddleware(["admin", "user"]), attendanceController.getStudentAttendanceData);
 
-router.post('/enroll', authMiddleware(["admin", "user"]), enrollmentController.enrollStudent);
-router.delete('/unenroll/:studentId/:courseId', authMiddleware(["admin", "user"]), enrollmentController.unenrollStudent);
 
 module.exports = router;
