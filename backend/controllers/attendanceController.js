@@ -63,16 +63,28 @@ exports.markAttendance = async (req, res) => {
   try {
     const { studentId, courseId, date, status } = req.body;
 
-    // Optional: Check if already marked
-    const existing = await Attendance.findOne({ studentId, courseId, date });
-    if (existing) {
-      return res.status(400).json({ error: 'Attendance already marked for this date' });
+    // 🔍 Step 1: Find student by custom studentId to get MongoDB _id
+    const studentDoc = await Student.findOne({ studentId });
+    if (!studentDoc) {
+      return res.status(404).json({ error: 'Student not found' });
     }
 
+    // 🔍 Step 2: Check if already marked for this date/course
+    const existing = await Attendance.findOne({ 
+      student: studentDoc._id, 
+      courseId, 
+      date 
+    });
+    if (existing) {
+      return res.status(400).json({ error: 'Attendance already marked' });
+    }
+
+    // ✅ Step 3: Create attendance with BOTH IDs
     const record = new Attendance({
-      student: studentId, // or studentId if using String
+      studentId: studentId,        // e.g., "ID2026"
+      student: studentDoc._id,     // MongoDB ObjectId
       course: courseId,
-      date: new Date(date), // Convert string to Date
+      date: new Date(date),
       status
     });
 
