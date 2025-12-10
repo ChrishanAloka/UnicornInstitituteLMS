@@ -45,6 +45,17 @@ exports.getStudents = async (req, res) => {
   }
 };
 
+exports.getStudentById = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id)
+      .populate('enrolledCourses.course', 'courseName dayOfWeek timeFrom timeTo');
+    if (!student) return res.status(404).json({ error: 'Not found' });
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ error: 'Fetch failed' });
+  }
+};
+
 // @desc    Update a student
 // @route   PUT /api/auth/student/:id
 // @access  Private

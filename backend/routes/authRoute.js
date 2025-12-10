@@ -69,6 +69,7 @@ const ActivityItemsMarkProgressController = require('../controllers/ActivityItem
 const studentController = require('../controllers/studentController');
 const courseController = require('../controllers/courseController');
 const instructorController = require('../controllers/instructorController');
+const enrollmentController = require('./controllers/enrollmentController');
 
 
 // Only admin can manage printers (adjust roles as needed)
@@ -192,11 +193,6 @@ router.get("/admin/summary", authMiddleware(["admin", "cashier"]), adminControll
 router.get("/admin/trend/monthly", authMiddleware(["admin"]), adminController.getMonthlyTrend);
 router.get("/admin/expenses", authMiddleware(["admin"]), adminController.getExpenseSummary);
 
-// Attendance Routes
-router.post("/attendance/punch", authMiddleware(["admin", "cashier", "kitchen"]), attendanceController.recordPunch);
-router.get("/attendance/summary", authMiddleware(["admin", "cashier", "kitchen"]), attendanceController.getSummary);
-router.get("/admin/attendance/monthly-summary", authMiddleware(["admin"]), attendanceController.getMonthlySummary);
-
 router.get("/notifications", authMiddleware(["admin", "cashier", "kitchen"]), notificationController.getNotifications);
 router.post("/notifications/send", authMiddleware(["admin", "cashier", "kitchen"]), notificationController.sendNotification);
 router.post("/notifications/mark-read", authMiddleware(["admin", "cashier", "kitchen"]), notificationController.markAsRead);
@@ -260,6 +256,7 @@ router.get('/activityitemsmarkprogress/', authMiddleware(["admin", "user"]), Act
 // All routes are protected
 router.post('/students/register', authMiddleware(["admin", "user"]), studentController.registerStudent);
 router.get('/students/', authMiddleware(["admin", "user"]), studentController.getStudents);
+router.get('/students/:id', authMiddleware(["admin", "user"]), studentController.getStudentById);
 router.put('/students/:id', authMiddleware(["admin", "user"]), studentController.updateStudent);
 router.delete('/students/:id', authMiddleware(["admin", "user"]), studentController.deleteStudent);
 
@@ -274,5 +271,12 @@ router.post('/course/register', authMiddleware(["admin", "user"]), courseControl
 router.get('/course', authMiddleware(["admin", "user"]), courseController.getCourses);
 router.put('/course/:id', authMiddleware(["admin", "user"]), courseController.updateCourse);
 router.delete('/course/:id', authMiddleware(["admin", "user"]), courseController.deleteCourse);
+
+// Attendance Routes
+router.post("/attendance", authMiddleware(["admin", "user"]), attendanceController.markAttendance);
+router.get("/attendance", authMiddleware(["admin", "user"]), attendanceController.getStudentAttendanceData);
+
+router.post('/enroll', authMiddleware(["admin", "user"]), enrollmentController.enrollStudent);
+router.delete('/unenroll/:studentId/:courseId', authMiddleware(["admin", "user"]), enrollmentController.unenrollStudent);
 
 module.exports = router;
