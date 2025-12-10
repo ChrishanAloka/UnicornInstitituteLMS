@@ -68,7 +68,7 @@ const studentController = require('../controllers/studentController');
 const courseController = require('../controllers/courseController');
 const instructorController = require('../controllers/instructorController');
 const attendanceController = require("../controllers/attendanceController");
-const enrollmentController = require('./controllers/enrollmentController');
+const enrollmentController = require('../controllers/enrollmentController');
 
 
 // Only admin can manage printers (adjust roles as needed)
