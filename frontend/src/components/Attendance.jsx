@@ -46,7 +46,6 @@ const Attendance = () => {
     setStudent(null);
     setEnrolledCourses([]);
     setLoading(false);
-    fetchStudent();
   };
 
   // ✅ FETCH STUDENT WITH ATTENDANCE STATUS FOR SELECTED DATE

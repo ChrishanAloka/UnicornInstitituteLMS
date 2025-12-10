@@ -7,24 +7,35 @@ const Attendance = require('../models/Attendance');
 // @access  Private
 exports.searchStudent = async (req, res) => {
   try {
-    const { q, date } = req.query;
+    const { q, date: dateParam } = req.query;
 
-    // Validate query
     if (!q) {
       return res.status(400).json({ error: 'Search query "q" is required' });
     }
 
-    // Validate date (optional, defaults to today)
-    let searchDate = date ? new Date(date) : new Date();
-    if (isNaN(searchDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    // Parse and validate date
+    let searchDate;
+    if (dateParam) {
+      searchDate = new Date(dateParam);
+      if (isNaN(searchDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+      }
+    } else {
+      searchDate = new Date();
     }
 
-    // Find student by ID or name (case-insensitive)
+    // Create start/end of day in UTC (or local time — see note below)
+    const startOfDay = new Date(searchDate);
+    startOfDay.setUTCHours(0, 0, 0, 0); // or setHours(0, 0, 0, 0) for local time
+
+    const endOfDay = new Date(searchDate);
+    endOfDay.setUTCHours(23, 59, 59, 999); // or setHours(23, 59, 59, 999)
+
+    // Find student
     const student = await Student.findOne({
       $or: [
-        { studentId: { $regex: new RegExp(`^${q}$`, 'i') } }, // Exact match for ID
-        { name: { $regex: q, $options: 'i' } }                // Partial match for name
+        { studentId: { $regex: new RegExp(`^${q}$`, 'i') } },
+        { name: { $regex: q, $options: 'i' } }
       ]
     }).populate('enrolledCourses.course', 'courseName dayOfWeek timeFrom timeTo');
 
@@ -32,23 +43,20 @@ exports.searchStudent = async (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    // Fetch attendance records for this student on the given date
+    // ✅ FIXED: Use startOfDay and endOfDay in query
     const attendanceRecords = await Attendance.find({
       studentId: student.studentId,
       date: {
-        $gte: new Date(searchDate.setHours(0, 0, 0, 0)),
-        $lt: new date.sethours(23, 59, 59, 999)
+        $gte: startOfDay,
+        $lt: endOfDay
       }
     }).select('course');
 
-    // Create a Set of marked course IDs (as strings)
     const markedCourseIds = new Set(
       attendanceRecords.map(record => record.course.toString())
     );
 
-    // Attach isMarked flag to each enrolled course
     const enrolledWithStatus = student.enrolledCourses.map(enroll => {
-      // Ensure we have a valid course object
       if (!enroll.course) {
         return { ...enroll.toObject(), isMarked: false };
       }
@@ -58,7 +66,6 @@ exports.searchStudent = async (req, res) => {
       };
     });
 
-    // Prepare response
     const studentResponse = student.toObject();
     studentResponse.enrolledCourses = enrolledWithStatus;
 
