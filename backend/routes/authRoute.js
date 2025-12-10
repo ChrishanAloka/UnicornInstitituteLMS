@@ -275,7 +275,7 @@ router.delete('/course/:id', authMiddleware(["admin", "user"]), courseController
 
 // Attendance Routes
 router.post("/attendance/mark", authMiddleware(["admin", "user"]), attendanceController.markAttendance);
-router.get("/attendance", authMiddleware(["admin", "user"]), attendanceController.getStudentAttendanceData);
+router.get("/attendance", authMiddleware(["admin", "user"]), attendanceController.getStudentWithCourses);
 
 
 module.exports = router;
