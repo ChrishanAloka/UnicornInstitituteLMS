@@ -11,17 +11,20 @@ const Attendance = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
 
   const handleCheck = async () => {
-    if (!studentId) {
+    if (!studentId.trim()) {
       toast.error("Please enter Student ID");
       return;
     }
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/attendance", {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { studentId, date }
-      });
+      const res = await axios.get(
+        "https://unicorninstititutelms.onrender.com/api/auth/attendance",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { studentId: studentId.trim(), date }
+        }
+      );
       setStudentData(res.data);
       setSelectedCourse(null);
       toast.success("Student loaded!");
@@ -65,7 +68,7 @@ const Attendance = () => {
               className="form-control"
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
-              placeholder="Enter or scan QR"
+              placeholder="Enter Student ID"
             />
           </div>
           <div className="col-md-3">
@@ -78,7 +81,11 @@ const Attendance = () => {
             />
           </div>
           <div className="col-md-3 d-flex align-items-end">
-            <button className="btn btn-primary w-100" onClick={handleCheck} disabled={loading}>
+            <button
+              className="btn btn-primary w-100"
+              onClick={handleCheck}
+              disabled={loading}
+            >
               {loading ? "Checking..." : "Check Student"}
             </button>
           </div>
@@ -97,7 +104,7 @@ const Attendance = () => {
             <div>
               <h5 className="text-success">Today's Courses</h5>
               <div className="row">
-                {studentData.todayCourses.map(course => (
+                {studentData.todayCourses.map((course) => (
                   <div className="col-md-6 mb-3" key={course._id}>
                     <div className="card border-left-success">
                       <div className="card-body">
