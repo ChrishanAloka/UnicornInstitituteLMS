@@ -233,3 +233,28 @@ exports.createPayment = async (req, res) => {
     res.status(500).json({ error: 'Failed to record payment' });
   }
 };
+
+// PUT /api/auth/students/:studentId/enrollments/:enrollmentId
+exports.updateEnrollmentDates = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+    const student = await Student.findById(req.params.studentId);
+    
+    const enrollment = student.enrolledCourses.id(req.params.enrollmentId);
+    if (!enrollment) {
+      return res.status(404).json({ error: 'Enrollment not found' });
+    }
+
+    // Update dates (endDate can be null/empty)
+    enrollment.startDate = startDate || undefined;
+    enrollment.endDate = endDate || undefined;
+
+    await student.save();
+    await student.populate("enrolledCourses.course", "courseName dayOfWeek timeFrom timeTo");
+    
+    res.json({ enrolledCourses: student.enrolledCourses });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update enrollment dates' });
+  }
+};

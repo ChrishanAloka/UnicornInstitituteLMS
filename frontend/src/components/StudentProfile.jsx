@@ -18,9 +18,10 @@ const StudentProfile = () => {
     method: "Cash",
     notes: ""
   });
-
   // For enrollment: track open date fields per course
   const [dateInputs, setDateInputs] = useState({}); // { courseId: { startDate, endDate } }
+  const [editingEnrollmentId, setEditingEnrollmentId] = useState(null);
+  const [editDates, setEditDates] = useState({ startDate: "", endDate: "" });
 
   useEffect(() => {
     fetchAllCourses();
@@ -105,7 +106,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `https://unicorninstititutelms.onrender.com/api/auth/payments`,
+        `https://unicorninstititutelms.onrender.com/api/auth/students/payments`,
         {
           studentId: student._id,
           courseId,
@@ -159,6 +160,38 @@ const StudentProfile = () => {
       toast.success("Enrolled successfully!");
     } catch (err) {
       toast.error("Enrollment failed");
+    }
+  };
+
+  const startEditingDates = (enrollment) => {
+    setEditingEnrollmentId(enrollment._id);
+    setEditDates({
+      startDate: enrollment.startDate ? new Date(enrollment.startDate).toISOString().split('T')[0] : "",
+      endDate: enrollment.endDate ? new Date(enrollment.endDate).toISOString().split('T')[0] : ""
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingEnrollmentId(null);
+    setEditDates({ startDate: "", endDate: "" });
+  };
+
+  const handleSaveDates = async (studentId, enrollmentId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.put(
+        `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/enrollments/${enrollmentId}`,
+        {
+          startDate: editDates.startDate || undefined,
+          endDate: editDates.endDate || undefined
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setEnrolledCourses(res.data.enrolledCourses);
+      setEditingEnrollmentId(null);
+      toast.success("Enrollment dates updated!");
+    } catch (err) {
+      toast.error("Failed to update dates");
     }
   };
 
@@ -302,20 +335,70 @@ const StudentProfile = () => {
                   </thead>
                   <tbody>
                     {enrolledCourses.map(enroll => (
-                      <tr key={enroll._id}>
-                        <td>{enroll.course?.courseName || "—"}</td>
-                        <td>
-                          {enroll.course?.dayOfWeek && (
-                            <>
-                              {enroll.course.dayOfWeek.charAt(0).toUpperCase() + enroll.course.dayOfWeek.slice(1)} • 
-                              {enroll.course.timeFrom}–{enroll.course.timeTo}
-                            </>
-                          )}
-                        </td>
-                        <td>{formatDate(enroll.startDate)}</td>
-                        <td>{formatDate(enroll.endDate)}</td>
-                        <td>
+                    <tr key={enroll._id}>
+                      <td>{enroll.course?.courseName || "—"}</td>
+                      <td>
+                        {enroll.course?.dayOfWeek && (
+                          <>
+                            {enroll.course.dayOfWeek.charAt(0).toUpperCase() + enroll.course.dayOfWeek.slice(1)} • 
+                            {enroll.course.timeFrom}–{enroll.course.timeTo}
+                          </>
+                        )}
+                      </td>
+
+                      {/* Start Date */}
+                      <td>
+                        {editingEnrollmentId === enroll._id ? (
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={editDates.startDate}
+                            onChange={(e) => setEditDates({ ...editDates, startDate: e.target.value })}
+                          />
+                        ) : (
+                          formatDate(enroll.startDate)
+                        )}
+                      </td>
+
+                      {/* End Date */}
+                      <td>
+                        {editingEnrollmentId === enroll._id ? (
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            value={editDates.endDate}
+                            onChange={(e) => setEditDates({ ...editDates, endDate: e.target.value })}
+                          />
+                        ) : (
+                          formatDate(enroll.endDate)
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td>
+                        {editingEnrollmentId === enroll._id ? (
                           <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-success"
+                              onClick={() => handleSaveDates(student._id, enroll._id)}
+                            >
+                              ✅ Save
+                            </button>
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={cancelEditing}
+                            >
+                              ❌ Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => startEditingDates(enroll)}
+                            >
+                              📅 Edit Dates
+                            </button>
                             <button
                               className="btn btn-sm btn-danger"
                               onClick={() => handleUnenroll(student._id, enroll._id)}
@@ -329,9 +412,10 @@ const StudentProfile = () => {
                               💰 Pay
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                   </tbody>
                 </table>
               </div>
