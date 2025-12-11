@@ -275,6 +275,7 @@ router.post('/course/register', authMiddleware(["admin", "user"]), courseControl
 router.get('/course', authMiddleware(["admin", "user"]), courseController.getCourses);
 router.put('/course/:id', authMiddleware(["admin", "user"]), courseController.updateCourse);
 router.delete('/course/:id', authMiddleware(["admin", "user"]), courseController.deleteCourse);
+router.get('/course/track-payments', authMiddleware(["admin", "user"]), courseController.getPaymentTracking);
 
 // Attendance Routes
 router.post("/attendance/mark", authMiddleware(["admin", "user"]), attendanceController.markAttendance);

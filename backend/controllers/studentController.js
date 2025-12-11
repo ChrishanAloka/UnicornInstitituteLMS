@@ -1,7 +1,7 @@
 // controllers/studentController.js
 const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
-
+const Payment = require('../models/Payment');
 // @desc    Search student by ID or name + check attendance for a date
 // @route   GET /api/auth/student/search?q=...&date=YYYY-MM-DD
 // @access  Private
