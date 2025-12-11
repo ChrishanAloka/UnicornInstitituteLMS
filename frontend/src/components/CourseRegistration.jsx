@@ -13,7 +13,10 @@ const CourseRegistration = () => {
     timeTo: "",
     description: "",
     courseType: "weekly", // ✅ changed default to 'weekly' (more common for day-of-week)
-    instructor: ""
+    instructor: "",
+    courseStartDate: "",   // ✅
+    courseEndDate: "",     // ✅
+    courseFees: ""         // ✅
   });
   const [editingCourse, setEditingCourse] = useState(null);
   const [editData, setEditData] = useState({ ...newCourse });
@@ -52,17 +55,30 @@ const CourseRegistration = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    const { courseName, dayOfWeek, timeFrom, timeTo } = newCourse;
+    const { courseName, dayOfWeek, timeFrom, timeTo, courseType, courseStartDate } = newCourse;
     if (!courseName || !dayOfWeek || !timeFrom || !timeTo) {
       toast.error("Please fill all required fields");
       return;
     }
 
+    // ✅ Conditional validation
+    if (courseType === "other" && !courseStartDate) {
+      toast.error("Course Start Date is required for 'Other' course type");
+      return;
+    }
+
+    // Prepare payload (convert empty strings to null/undefined if needed)
+    const payload = { ...newCourse };
+    if (!payload.courseStartDate) delete payload.courseStartDate;
+    if (!payload.courseEndDate) delete payload.courseEndDate;
+    if (payload.courseFees === "") delete payload.courseFees;
+    else payload.courseFees = Number(payload.courseFees);
+
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
         "https://unicorninstititutelms.onrender.com/api/auth/course/register",
-        newCourse,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -74,7 +90,10 @@ const CourseRegistration = () => {
         timeTo: "",
         description: "",
         courseType: "weekly",
-        instructor: ""
+        instructor: "",
+        courseStartDate: "",
+        courseEndDate: "",
+        courseFees: ""
       });
       toast.success("Course registered!");
     } catch (err) {
@@ -101,17 +120,29 @@ const CourseRegistration = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    const { courseName, dayOfWeek, timeFrom, timeTo } = editData;
+    const { courseName, dayOfWeek, timeFrom, timeTo, courseType, courseStartDate } = editData;
+
     if (!courseName || !dayOfWeek || !timeFrom || !timeTo) {
       toast.error("Required fields missing");
       return;
     }
 
+    if (courseType === "other" && !courseStartDate) {
+      toast.error("Course Start Date is required for 'Other' course type");
+      return;
+    }
+
+    const payload = { ...editData };
+    if (!payload.courseStartDate) delete payload.courseStartDate;
+    if (!payload.courseEndDate) delete payload.courseEndDate;
+    if (payload.courseFees === "") delete payload.courseFees;
+    else payload.courseFees = Number(payload.courseFees);
+
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
         `https://unicorninstititutelms.onrender.com/api/auth/course/${editingCourse}`,
-        editData,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -225,6 +256,44 @@ const CourseRegistration = () => {
               ))}
             </select>
           </div>
+          {newCourse.courseType === "other" && (
+            <>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Course Start Date *</label>
+                <input
+                  type="date"
+                  name="courseStartDate"
+                  value={newCourse.courseStartDate}
+                  onChange={handleChange}
+                  className="form-control"
+                  required
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Course End Date (Optional)</label>
+                <input
+                  type="date"
+                  name="courseEndDate"
+                  value={newCourse.courseEndDate}
+                  onChange={handleChange}
+                  className="form-control"
+                />
+              </div>
+            </>
+          )}
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Course Fees (Optional)</label>
+            <input
+              type="number"
+              name="courseFees"
+              value={newCourse.courseFees}
+              onChange={handleChange}
+              className="form-control"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 150.50"
+            />
+          </div>
           <div className="col-md-12">
             <label className="form-label fw-semibold">Description</label>
             <textarea
@@ -319,6 +388,45 @@ const CourseRegistration = () => {
                       <option value="3-Month">3 Month Course</option>
                       <option value="other">Other</option>
                     </select>
+                  </div>
+                  {editData.courseType === "other" && (
+                    <>
+                      <div className="mb-3">
+                        <label className="form-label">Course Start Date *</label>
+                        <input
+                          type="date"
+                          name="courseStartDate"
+                          value={editData.courseStartDate}
+                          onChange={handleEditChange}
+                          className="form-control"
+                          required
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Course End Date (Optional)</label>
+                        <input
+                          type="date"
+                          name="courseEndDate"
+                          value={editData.courseEndDate}
+                          onChange={handleEditChange}
+                          className="form-control"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Course Fees (Optional)</label>
+                    <input
+                      type="number"
+                      name="courseFees"
+                      value={newCourse.courseFees}
+                      onChange={handleChange}
+                      className="form-control"
+                      min="0"
+                      step="0.01"
+                      placeholder="e.g. 150.50"
+                    />
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Instructor</label>

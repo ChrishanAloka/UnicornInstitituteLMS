@@ -1,0 +1,777 @@
+/* AppleRoleLayout.css */
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Main Layout Container */
+.apple-layout {
+  display: flex;
+  height: 100vh;
+  background-color: #F2F2F7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+/* ===== SIDEBAR ===== */
+.apple-sidebar {
+  width: 280px;
+  background-color: #FFFFFF;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1000;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.apple-sidebar.collapsed {
+  width: 80px;
+}
+
+/* Sidebar Header */
+.apple-sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 88px;
+  transition: padding 0.3s ease;
+}
+
+.apple-sidebar.collapsed .apple-sidebar-header {
+  padding: 24px 10px;
+  justify-content: center;
+}
+
+.apple-logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: gap 0.3s ease;
+}
+
+.apple-sidebar.collapsed .apple-logo-wrapper {
+  gap: 0;
+}
+
+.apple-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.apple-logo-text {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1C1C1E;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.apple-sidebar.collapsed .apple-logo-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.apple-close-btn,
+.apple-collapse-btn {
+  background: none;
+  border: none;
+  color: #8E8E93;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.apple-close-btn:hover,
+.apple-collapse-btn:hover {
+  background-color: rgba(142, 142, 147, 0.1);
+}
+
+.apple-close-btn:active,
+.apple-collapse-btn:active {
+  transform: scale(0.95);
+}
+
+.apple-close-btn {
+  display: none;
+}
+
+/* Search Container */
+.apple-search-container {
+  margin: 16px 20px;
+  position: relative;
+  opacity: 1;
+  transition: opacity 0.3s ease, margin 0.3s ease;
+}
+
+.apple-sidebar.collapsed .apple-search-container {
+  opacity: 0;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.apple-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8E8E93;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.apple-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  background-color: #F2F2F7;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1C1C1E;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.apple-search-input:focus {
+  background-color: #E5E5EA;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.apple-search-input::placeholder {
+  color: #8E8E93;
+}
+
+/* Navigation */
+.apple-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(142, 142, 147, 0.3) transparent;
+}
+
+.apple-sidebar.collapsed .apple-nav {
+  padding: 8px 6px;
+}
+
+.apple-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.apple-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.apple-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(142, 142, 147, 0.3);
+  border-radius: 3px;
+}
+
+.apple-nav::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(142, 142, 147, 0.5);
+}
+
+/* Menu Items */
+.apple-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  color: #1C1C1E;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
+  cursor: pointer;
+  letter-spacing: -0.2px;
+  position: relative;
+}
+
+.apple-sidebar.collapsed .apple-menu-item {
+  padding: 12px;
+  justify-content: center;
+  gap: 0;
+}
+
+.apple-menu-item:hover {
+  background-color: rgba(120, 120, 128, 0.08);
+}
+
+.apple-menu-item.active {
+  background-color: #007AFF;
+  color: #FFFFFF;
+}
+
+.apple-menu-icon {
+  font-size: 18px;
+  min-width: 18px;
+  flex-shrink: 0;
+}
+
+.apple-menu-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.apple-sidebar.collapsed .apple-menu-label {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+/* Level Icons */
+.level-icon-apple {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1C1C1E;
+  background-color: rgba(120, 120, 128, 0.12);
+  border-radius: 4px;
+}
+
+.apple-menu-item.active .level-icon-apple {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Divider */
+.apple-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.05);
+  margin: 12px 16px;
+  transition: margin 0.3s ease;
+}
+
+.apple-sidebar.collapsed .apple-divider {
+  margin: 12px 6px;
+}
+
+/* Sidebar Footer */
+.apple-sidebar-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 16px 20px;
+  background-color: #FAFAFA;
+  transition: padding 0.3s ease;
+}
+
+.apple-sidebar.collapsed .apple-sidebar-footer {
+  padding: 16px 10px;
+}
+
+.apple-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: gap 0.3s ease;
+}
+
+.apple-sidebar.collapsed .apple-user-info {
+  gap: 0;
+  justify-content: center;
+}
+
+.apple-user-avatar {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #007AFF;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.apple-user-details {
+  flex: 1;
+  min-width: 0;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.apple-sidebar.collapsed .apple-user-details {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.apple-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1C1C1E;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apple-user-role {
+  font-size: 13px;
+  color: #8E8E93;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== MAIN CONTENT ===== */
+.apple-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Header */
+.apple-header {
+  height: 64px;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.apple-header-left,
+.apple-header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.apple-menu-button {
+  background: none;
+  border: none;
+  color: #1C1C1E;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.apple-menu-button:hover {
+  background-color: rgba(120, 120, 128, 0.08);
+}
+
+.apple-menu-button:active {
+  transform: scale(0.95);
+}
+
+/* Session Timer */
+.apple-session-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #F2F2F7;
+  border-radius: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.apple-timer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #34C759;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.apple-timer-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1C1C1E;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+/* Theme Toggle */
+.apple-theme-toggle {
+  background: none;
+  border: none;
+  color: #1C1C1E;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.apple-theme-toggle:hover {
+  background-color: rgba(120, 120, 128, 0.08);
+  transform: rotate(15deg);
+}
+
+.apple-theme-toggle:active {
+  transform: scale(0.95) rotate(15deg);
+}
+
+/* Notification Wrapper */
+.apple-notification-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* User Dropdown */
+.apple-user-dropdown-container {
+  position: relative;
+}
+
+.apple-user-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #1C1C1E;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s, transform 0.2s;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.apple-user-button:hover {
+  background-color: rgba(120, 120, 128, 0.08);
+}
+
+.apple-user-button:active {
+  transform: scale(0.98);
+}
+
+.apple-user-button svg {
+  font-size: 24px;
+  transition: color 0.3s ease;
+}
+
+.apple-user-button-text {
+  text-transform: capitalize;
+  transition: color 0.3s ease;
+}
+
+/* Dropdown Menu */
+.apple-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 1000;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: dropdownFadeIn 0.2s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.apple-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #1C1C1E;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s, color 0.3s ease;
+  font-family: inherit;
+}
+
+.apple-dropdown-item:hover {
+  background-color: rgba(120, 120, 128, 0.08);
+}
+
+.apple-dropdown-item.logout {
+  color: #FF3B30;
+}
+
+.apple-dropdown-icon {
+  font-size: 16px;
+}
+
+.apple-dropdown-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.05);
+  margin: 4px 0;
+  transition: background-color 0.3s ease;
+}
+
+/* Page Content */
+.apple-page-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 32px;
+  background-color: #F2F2F7;
+  transition: background-color 0.3s ease;
+}
+
+/* Overlay */
+.apple-overlay {
+  display: none;
+}
+
+/* ===== DARK MODE ===== */
+.dark-mode.apple-layout {
+  background-color: #000000;
+}
+
+.dark-mode .apple-sidebar {
+  background-color: #1C1C1E;
+  border-right-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-sidebar-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-logo-text {
+  color: #FFFFFF;
+}
+
+.dark-mode .apple-close-btn,
+.dark-mode .apple-collapse-btn {
+  color: #8E8E93;
+}
+
+.dark-mode .apple-close-btn:hover,
+.dark-mode .apple-collapse-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-search-input {
+  background-color: #2C2C2E;
+  color: #FFFFFF;
+}
+
+.dark-mode .apple-search-input::placeholder {
+  color: #8E8E93;
+}
+
+.dark-mode .apple-menu-item {
+  color: #FFFFFF;
+}
+
+.dark-mode .apple-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .level-icon-apple {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .apple-divider {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-sidebar-footer {
+  background-color: #2C2C2E;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-user-name {
+  color: #FFFFFF;
+}
+
+.dark-mode .apple-header {
+  background-color: rgba(28, 28, 30, 0.8);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-menu-button,
+.dark-mode .apple-user-button,
+.dark-mode .apple-theme-toggle {
+  color: #FFFFFF;
+}
+
+.dark-mode .apple-menu-button:hover,
+.dark-mode .apple-user-button:hover,
+.dark-mode .apple-theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-session-timer {
+  background-color: #2C2C2E;
+}
+
+.dark-mode .apple-timer-text {
+  color: #FFFFFF;
+}
+
+.dark-mode .apple-dropdown {
+  background-color: #2C2C2E;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-dropdown-item {
+  color: #FFFFFF;
+}
+
+.dark-mode .apple-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-dropdown-divider {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .apple-page-content {
+  background-color: #000000;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1023px) {
+  .apple-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    transform: translateX(-100%);
+    z-index: 2000;
+  }
+
+  .apple-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .apple-sidebar.collapsed {
+    width: 280px;
+  }
+
+  .apple-close-btn {
+    display: flex;
+  }
+
+  .apple-collapse-btn {
+    display: none;
+  }
+
+  .apple-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1999;
+    animation: overlayFadeIn 0.3s ease;
+  }
+
+  @keyframes overlayFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .apple-header {
+    padding: 0 16px;
+  }
+
+  .apple-page-content {
+    padding: 20px 16px;
+  }
+
+  .apple-session-timer {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .apple-header-left,
+  .apple-header-right {
+    gap: 12px;
+  }
+
+  .apple-user-button-text {
+    display: none;
+  }
+
+  .apple-page-content {
+    padding: 16px 12px;
+  }
+
+  .apple-header-right {
+    gap: 8px;
+  }
+}

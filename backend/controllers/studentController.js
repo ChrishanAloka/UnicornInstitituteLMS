@@ -196,3 +196,40 @@ exports.unenrollStudent = async (req, res) => {
   await student.populate("enrolledCourses.course", "courseName dayOfWeek timeFrom timeTo");
   res.json({ enrolledCourses: student.enrolledCourses });
 };
+
+// GET /api/auth/students/:studentId/payments
+exports.getStudentPayments = async (req, res) => {
+  try {
+    const payments = await Payment.find({ student: req.params.studentId })
+      .populate('course', 'courseName')
+      .populate('student', 'name studentId')
+      .sort({ paymentDate: -1 });
+
+    res.json(payments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch payments' });
+  }
+};
+
+// POST /api/auth/payments
+exports.createPayment = async (req, res) => {
+  try {
+    const { studentId, courseId, amount, method, notes } = req.body;
+
+    const payment = new Payment({
+      student: studentId,
+      course: courseId,
+      amount,
+      method,
+      notes
+    });
+
+    await payment.save();
+    await payment.populate('course', 'courseName');
+    res.status(201).json(payment);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to record payment' });
+  }
+};

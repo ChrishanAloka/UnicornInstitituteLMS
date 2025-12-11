@@ -1,0 +1,116 @@
+/* LAYOUT SHELL */
+.layout-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+
+/* MAIN CONTENT */
+.main-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ------------------------- */
+/*   🧊 GLASS SIDEBAR       */
+/* ------------------------- */
+
+.sidebar-glass {
+  width: 240px;
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.25);
+  transition: width .3s ease-in-out;
+  overflow-y: auto;
+}
+
+.sidebar-glass.collapsed {
+  width: 80px;
+}
+
+.sidebar-header-glass {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  color: white;
+}
+
+.logo-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.sidebar-menu-glass {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.glass-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .85rem 1.2rem;
+  color: white;
+  text-decoration: none;
+  transition: background .2s ease;
+}
+
+.glass-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-icon {
+  font-size: 1.3rem;
+}
+
+/* ------------------------- */
+/* 🍏  APPLE HEADER         */
+/* ------------------------- */
+
+.apple-header {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(14px);
+  padding: 1.3rem 1.8rem;
+  transition: all .25s ease-in-out;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.apple-header.shrink {
+  padding: 0.6rem 1.8rem;
+  backdrop-filter: blur(20px);
+}
+
+.page-title {
+  font-size: 1.4rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* ------------------------- */
+/* CONTENT                   */
+/* ------------------------- */
+
+.content-shell {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* MOBILE BEHAVIOR */
+@media(max-width: 900px) {
+  .sidebar-glass {
+    position: absolute;
+    left: 0;
+    height: 100vh;
+    z-index: 999;
+    width: 220px;
+  }
+}

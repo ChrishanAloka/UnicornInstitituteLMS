@@ -9,6 +9,15 @@ const StudentProfile = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [newPayment, setNewPayment] = useState({
+    courseId: "",
+    amount: "",
+    method: "Cash",
+    notes: ""
+  });
 
   // For enrollment: track open date fields per course
   const [dateInputs, setDateInputs] = useState({}); // { courseId: { startDate, endDate } }
@@ -29,6 +38,23 @@ const StudentProfile = () => {
     }
   };
 
+  const fetchPayments = async (studentId) => {
+    setLoadingPayments(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/payments`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPayments(res.data);
+    } catch (err) {
+      toast.error("Failed to load payments");
+      setPayments([]);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
@@ -42,6 +68,7 @@ const StudentProfile = () => {
       if (res.data) {
         setStudent(res.data);
         setEnrolledCourses(res.data.enrolledCourses || []);
+        fetchPayments(res.data._id);
       } else {
         toast.error("Student not found");
         setStudent(null);
@@ -53,6 +80,48 @@ const StudentProfile = () => {
       setEnrolledCourses([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openPaymentModal = (courseId, courseName) => {
+    setNewPayment({
+      courseId: courseId,
+      amount: "",
+      method: "Cash",
+      notes: ""
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handleRecordPayment = async (e) => {
+    e.preventDefault();
+    const { courseId, amount, method, notes } = newPayment;
+
+    if (!courseId || !amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      toast.error("Please enter a valid amount and select a course.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `https://unicorninstititutelms.onrender.com/api/auth/payments`,
+        {
+          studentId: student._id,
+          courseId,
+          amount: Number(amount),
+          method,
+          notes: notes || undefined
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success("Payment recorded!");
+      setShowPaymentModal(false);
+      fetchPayments(student._id); // Refresh payments
+      setNewPayment({ courseId: "", amount: "", method: "Cash", notes: "" });
+    } catch (err) {
+      toast.error("Failed to record payment");
     }
   };
 
@@ -246,12 +315,20 @@ const StudentProfile = () => {
                         <td>{formatDate(enroll.startDate)}</td>
                         <td>{formatDate(enroll.endDate)}</td>
                         <td>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleUnenroll(student._id, enroll._id)}
-                          >
-                            🗑️ Unenroll
-                          </button>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleUnenroll(student._id, enroll._id)}
+                            >
+                              🗑️ Unenroll
+                            </button>
+                            <button
+                              className="btn btn-sm btn-success"
+                              onClick={() => openPaymentModal(enroll.course._id, enroll.course.courseName)}
+                            >
+                              💰 Pay
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -259,6 +336,113 @@ const StudentProfile = () => {
                 </table>
               </div>
             </>
+          )}
+
+          {/* Payments Section */}
+          {student && (
+            <>
+              <h4 className="mb-3 text-secondary mt-5">Payments</h4>
+              {loadingPayments ? (
+                <p>Loading payments...</p>
+              ) : payments.length === 0 ? (
+                <p className="text-muted">No payments recorded for this student.</p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Date</th>
+                        <th>Course</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payments.map(payment => (
+                        <tr key={payment._id}>
+                          <td>{new Date(payment.paymentDate).toLocaleDateString()}</td>
+                          <td>{payment.course?.courseName || "—"} </td>
+                          <td>${payment.amount.toFixed(2)}</td>
+                          <td>{payment.method || "—"}</td>
+                          <td>{payment.notes || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Record Payment Modal */}
+          {showPaymentModal && (
+            <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header bg-success text-white">
+                    <h5>Record Payment</h5>
+                    <button className="btn-close btn-close-white" onClick={() => setShowPaymentModal(false)} />
+                  </div>
+                  <div className="modal-body">
+                    <form onSubmit={handleRecordPayment}>
+                      <div className="mb-3">
+                        <label className="form-label">Course</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={courses.find(c => c._id === newPayment.courseId)?.courseName || "—"}
+                          disabled
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Amount *</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={newPayment.amount}
+                          onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
+                          min="0.01"
+                          step="0.01"
+                          required
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Payment Method *</label>
+                        <select
+                          className="form-select"
+                          value={newPayment.method}
+                          onChange={(e) => setNewPayment({ ...newPayment, method: e.target.value })}
+                          required
+                        >
+                          <option value="Cash">Cash</option>
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Mobile Money">Mobile Money</option>
+                          <option value="Card">Card</option>
+                          <option value="Cheque">Cheque</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label">Notes (Optional)</label>
+                        <textarea
+                          className="form-control"
+                          value={newPayment.notes}
+                          onChange={(e) => setNewPayment({ ...newPayment, notes: e.target.value })}
+                          rows="2"
+                        />
+                      </div>
+                      <div className="d-flex justify-content-end gap-2">
+                        <button type="button" className="btn btn-secondary" onClick={() => setShowPaymentModal(false)}>
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn btn-success">Record Payment</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}

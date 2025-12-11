@@ -1,9 +1,9 @@
-// src/components/CashierLogin.jsx
+// src/components/UserLogin.jsx
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/auth-context";
+import { motion } from "framer-motion";
 
 const UserLogin = () => {
   const [email, setEmail] = useState("");
@@ -12,87 +12,128 @@ const UserLogin = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-        const res = await axios.post("https://unicorninstititutelms.onrender.com/api/auth/login", { email, password });
-        const data = res.data;
-    
-        if (data.role !== "user") {
-          alert("Unauthorized access");
-          setLoading(false);
-          return;
-        }
-    
-        login(data); // Comes from useAuth()
-        navigate("/user"); // Redirect after login
-      } catch (err) {
-        alert("Login failed. Please check your credentials.");
+      const res = await axios.post(
+        "https://unicorninstititutelms.onrender.com/api/auth/login",
+        { email, password }
+      );
+      const data = res.data;
+
+      if (data.role !== "user") {
+        alert("Unauthorized Access");
         setLoading(false);
+        return;
+      }
+
+      login(data);
+      navigate("/user");
+    } catch (err) {
+      alert("Login failed. Please check your credentials.");
+      setLoading(false);
     }
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-      <div className="card shadow-sm p-4" style={{ maxWidth: "400px", width: "100%" }}>
-        <h4 className="text-center mb-4">User Login</h4>
+    <div
+      className="min-vh-100 d-flex justify-content-center align-items-center"
+      style={{
+        background: "linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%)",
+        padding: "20px",
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 shadow-lg"
+        style={{
+          width: "100%",
+          maxWidth: "420px",
+          borderRadius: "20px",
+          backdropFilter: "blur(12px)",
+          background: "rgba(255, 255, 255, 0.65)",
+          border: "1px solid rgba(255, 255, 255, 0.4)",
+        }}
+      >
+        <div className="text-center mb-4">
+          <h2 className="fw-bold" style={{ letterSpacing: "0.5px" }}>
+            Welcome Back
+          </h2>
+          <p className="text-muted mb-1">Login to continue</p>
+        </div>
+
+        {/* FORM */}
         <form onSubmit={handleLogin}>
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">Email address</label>
+            <label className="form-label fw-semibold">Email Address</label>
             <input
               type="email"
-              className="form-control"
-              id="email"
-              placeholder="Enter email"
+              className="form-control shadow-sm"
+              placeholder="example@mail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               disabled={loading}
+              required
+              style={{ borderRadius: "12px" }}
             />
           </div>
+
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">Password</label>
+            <label className="form-label fw-semibold">Password</label>
             <input
               type="password"
-              className="form-control"
-              id="password"
-              placeholder="Enter password"
+              className="form-control shadow-sm"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
               disabled={loading}
+              required
+              style={{ borderRadius: "12px" }}
             />
           </div>
-          <button
+
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             type="submit"
-            className="btn btn-primary w-100 d-flex align-items-center justify-content-center"
-            disabled={loading} // 👈 Disable button while loading
+            disabled={loading}
+            className="btn btn-primary w-100 py-2 fw-semibold shadow-sm"
+            style={{
+              borderRadius: "14px",
+              fontSize: "16px",
+            }}
           >
             {loading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></span>
                 Logging in...
               </>
             ) : (
               "Login"
             )}
-          </button>
+          </motion.button>
         </form>
+
+        <div className="text-center mt-3">
+          <Link className="text-decoration-none" to="/forgot-password">
+            Forgot Password?
+          </Link>
+        </div>
 
         <hr />
 
-        <p className="text-center mb-0">
+        <p className="text-center">
           Don't have an account?{" "}
-          <Link to="/signup?role=user" className="text-decoration-none">
+          <Link to="/signup?role=user" className="fw-semibold text-primary">
             Sign Up
           </Link>
         </p>
-        <p className="mt-3 text-center">
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </p>
-      </div>
+      </motion.div>
     </div>
   );
 };

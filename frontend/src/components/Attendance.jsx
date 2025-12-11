@@ -162,6 +162,23 @@ const Attendance = () => {
     return new Date(dateStr).toLocaleDateString();
   };
 
+  // ✅ Helper: Get day of week from selected date
+  const getDayOfWeek = (dateStr) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[date.getUTCDay()]; // or .getDay() for local time
+  };
+
+  // ✅ Compute target day
+  const targetDay = getDayOfWeek(selectedDate);
+
+  // ✅ Filter courses to only those matching the day
+  const relevantCourses = enrolledCourses.filter(enroll => {
+    const courseDay = enroll.course?.dayOfWeek?.toLowerCase();
+    return courseDay === targetDay;
+  });
+
   return (
     <div className="container py-4">
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Attendance</h2>
@@ -208,15 +225,21 @@ const Attendance = () => {
             <label className="form-label fw-semibold">Date</label>
             <input
               type="date"
+               max={new Date().toISOString().split("T")[0]}
               className="form-control"
               value={selectedDate}
               onChange={handleDateChange}
             />
           </div>
-          <div className="col-md-3 d-flex align-items-end">
+          <div className="col-md-3">
             <div className="w-100 text-center p-2 bg-light rounded">
               <small className="text-muted">
                 Selected: {formatDateDisplay(selectedDate)}
+              </small>
+            </div>
+            <div className="w-100 text-center p-2 bg-light rounded">
+              <small className="text-muted">
+                Today: {new Date().toISOString().split("T")[0]}
               </small>
             </div>
           </div>
@@ -258,30 +281,27 @@ const Attendance = () => {
             Enrolled Courses — Attendance for {formatDateDisplay(selectedDate)}
           </h4>
 
-          {enrolledCourses.length === 0 ? (
-            <div className="alert alert-info">No courses enrolled.</div>
+          {relevantCourses.length === 0 ? (
+            <div className="alert alert-info">
+              No courses scheduled for {formatDateDisplay(selectedDate)} ({targetDay}).
+            </div>
           ) : (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
                   <tr>
                     <th>Course</th>
-                    <th>Day & Time</th>
+                    <th>Time</th>
                     <th>Enrollment Period</th>
                     <th className="text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {enrolledCourses.map(enroll => (
+                  {relevantCourses.map(enroll => (
                     <tr key={enroll._id}>
                       <td><strong>{enroll.course?.courseName || "—"}</strong></td>
                       <td>
-                        {enroll.course?.dayOfWeek && (
-                          <>
-                            {enroll.course.dayOfWeek.charAt(0).toUpperCase() + enroll.course.dayOfWeek.slice(1)} •{" "}
-                            {enroll.course.timeFrom}–{enroll.course.timeTo}
-                          </>
-                        )}
+                        {enroll.course?.timeFrom}–{enroll.course?.timeTo}
                       </td>
                       <td>
                         {formatDateDisplay(enroll.startDate)} → {formatDateDisplay(enroll.endDate)}

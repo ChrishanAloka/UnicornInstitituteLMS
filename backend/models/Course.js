@@ -16,7 +16,11 @@ const courseSchema = new mongoose.Schema({
   instructor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Instructor'
-  }
+  },
+  // ✅ NEW FIELDS
+  courseStartDate: { type: Date }, // required only if courseType === "other"
+  courseEndDate: { type: Date },   // optional
+  courseFees: { type: Number }     // optional (you can make required if needed)
 }, { timestamps: true });
 
 module.exports = mongoose.model('Course', courseSchema);

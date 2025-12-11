@@ -1,5 +1,6 @@
+// RoleLayout.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./ProtectedRoute";
 import useTokenCountdown from "../hooks/useTokenCountdown";
 import {
@@ -7,33 +8,40 @@ import {
   FaChartBar, FaUserTie, FaCalendarCheck, FaTruck, FaMoneyBillWave,
   FaMoneyCheckAlt, FaUtensils, FaDollarSign, FaShoppingCart, FaHistory,
   FaBookOpen, FaClipboardList, FaUserCircle, FaPercentage, FaTruckLoading, 
-  FaFirstOrder,FaMotorcycle,FaUserClock,FaCashRegister,FaBookReader,FaCoins,FaWallet,FaPrint,FaUserTag,
+  FaFirstOrder, FaMotorcycle, FaUserClock, FaCashRegister, FaBookReader,
+  FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun
 } from "react-icons/fa";
-import "./Sidebar.css";
 import NotificationCenter from "./NotificationCenter";
+import "./AppleRoleLayout.css";
 
 const RoleLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+  
   const { user, logout } = useAuth();
   const countdown = useTokenCountdown();
   const location = useLocation();
+  const navigate = useNavigate();
   const dropdownRef = useRef();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
-  // Auto detect mobile view
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+      const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(false);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Close dropdown if clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -44,216 +52,257 @@ const RoleLayout = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const isSidebarExpanded = sidebarOpen || (isHovered && !isMobile);
+  // Apply dark mode class to body
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+  }, [darkMode]);
 
-  const createMenuItem = (to, label, Icon) => {
-    const isActive = location.pathname === to;
-    return (
-      <li title={!isSidebarExpanded ? label : ""} key={to}>
-        <Link to={to} className={`menu-link ${isActive ? "active" : ""}`}>
-          <Icon className="menu-icon" />
-          {isSidebarExpanded && <span className="menu-label">{label}</span>}
-        </Link>
-      </li>
-    );
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  const toggleSidebarCollapse = () => {
+    if (!isMobile) {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
   };
 
   const LevelIcon = ({ level }) => (
-    <span className="level-icon" style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '25px',
-      height: '20px',
-      fontSize: '20px',
-      fontWeight: 'bold',
-      color: '#4a5568', // matches typical icon color
-      borderRadius: '4px',
-      backgroundColor: '#ffffffff',
-      marginRight: '0px',
-      marginLeft: '-3px'
-    }}>
-      L{level}
-    </span>
+    <span className="level-icon-apple">L{level}</span>
   );
 
   const ActivityIcon = ({ level }) => (
-    <span className="level-icon" style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '30px',
-      height: '20px',
-      fontSize: '20px',
-      fontWeight: 'bold',
-      color: '#4a5568', // matches typical icon color
-      borderRadius: '4px',
-      backgroundColor: '#ffffffff',
-      marginRight: '0px',
-      marginLeft: '-3px'
-    }}>
-      A{level}
-    </span>
+    <span className="level-icon-apple">A{level}</span>
   );
 
-  // Define pseudo-icon components
   const L1Icon = () => <LevelIcon level={1} />;
   const L2Icon = () => <LevelIcon level={2} />;
   const L3Icon = () => <ActivityIcon level={3} />;
   const L4Icon = () => <LevelIcon level={4} />;
   const L5Icon = () => <LevelIcon level={5} />;
 
-  const renderSidebarMenu = () => {
+  const getMenuItems = () => {
     switch (user?.role) {
       case "admin":
-        return (
-          <>
-            {createMenuItem("/admin", "Dashboard", FaTachometerAlt)}
-            {createMenuItem("/cashier/today", "Daily Report", FaBookOpen)}
-            {createMenuItem("/cashier", "Order Management", FaCashRegister)}
-            {createMenuItem("/kitchen/menu", "Manage Menu", FaClipboardList)}
-            {createMenuItem("/kitchen", "Live Orders", FaShoppingCart)}
-            {createMenuItem("/cashier/orders", "Order History", FaHistory)}
-            {createMenuItem("/cashier/takeaway-orders", "Takeaway Orders", FaFirstOrder)}
-            {createMenuItem("/cashier-summery", "Cashier Summery", FaBookReader)}
-
-            {createMenuItem("/admin/users", "User Management", FaUsers)}
-            {createMenuItem("/admin/report", "Monthly Report", FaChartBar)}
-            {createMenuItem("/admin/customers", "Custoemrs", FaUserTag)}
-            {createMenuItem("/admin/employees", "Employees", FaUserTie)}
-            
-            {createMenuItem("/kitchen/attendance/add", "Live Attendance", FaUserClock)}
-            {createMenuItem("/admin/attendance", "Attendance History", FaCalendarCheck)}
-            {createMenuItem("/cashier/driver-register", "Takeaway Driver Register", FaMotorcycle)}
-            {createMenuItem("/admin/suppliers", "Suppliers Register", FaTruck)}
-            {createMenuItem("/admin/expenses", "Supplier Expenses", FaMoneyBillWave)}
-            {createMenuItem("/cashier/other-income", "Other Incomes", FaCoins)}
-            {createMenuItem("/cashier/other-expences", "Other Expences", FaWallet)}
-            {createMenuItem("/admin/bills", "Restaurant Bills", FaFileInvoice)}            
-            {createMenuItem("/admin/salaries", "Salary Payments", FaMoneyCheckAlt)}
-            {createMenuItem("/admin/service-charge", "Service Charge", FaPercentage)}
-            {createMenuItem("/admin/delivery-charges", "Delivery Charge", FaTruckLoading)}
-            {createMenuItem("/printer-settings", "Printer Settings", FaPrint)}
-            {createMenuItem("/admin/signup-key", "Signup Key", FaKey)}
-            {createMenuItem("/admin/currency", "Currency", FaDollarSign)}
-          </>
-        );
+        return [
+          { to: "/admin", label: "Dashboard", icon: FaTachometerAlt },
+          { to: "/cashier/today", label: "Daily Report", icon: FaBookOpen },
+          { to: "/cashier", label: "Order Management", icon: FaCashRegister },
+          { to: "/kitchen/menu", label: "Manage Menu", icon: FaClipboardList },
+          { to: "/kitchen", label: "Live Orders", icon: FaShoppingCart },
+          { to: "/cashier/orders", label: "Order History", icon: FaHistory },
+          { to: "/cashier/takeaway-orders", label: "Takeaway Orders", icon: FaFirstOrder },
+          { to: "/cashier-summery", label: "Cashier Summery", icon: FaBookReader },
+          { divider: true },
+          { to: "/admin/users", label: "User Management", icon: FaUsers },
+          { to: "/admin/report", label: "Monthly Report", icon: FaChartBar },
+          { to: "/admin/customers", label: "Customers", icon: FaUserTag },
+          { to: "/admin/employees", label: "Employees", icon: FaUserTie },
+          { divider: true },
+          { to: "/kitchen/attendance/add", label: "Live Attendance", icon: FaUserClock },
+          { to: "/admin/attendance", label: "Attendance History", icon: FaCalendarCheck },
+          { to: "/cashier/driver-register", label: "Takeaway Driver Register", icon: FaMotorcycle },
+          { to: "/admin/suppliers", label: "Suppliers Register", icon: FaTruck },
+          { to: "/admin/expenses", label: "Supplier Expenses", icon: FaMoneyBillWave },
+          { to: "/cashier/other-income", label: "Other Incomes", icon: FaCoins },
+          { to: "/cashier/other-expences", label: "Other Expences", icon: FaWallet },
+          { to: "/admin/bills", label: "Restaurant Bills", icon: FaFileInvoice },
+          { to: "/admin/salaries", label: "Salary Payments", icon: FaMoneyCheckAlt },
+          { to: "/admin/service-charge", label: "Service Charge", icon: FaPercentage },
+          { to: "/admin/delivery-charges", label: "Delivery Charge", icon: FaTruckLoading },
+          { to: "/printer-settings", label: "Printer Settings", icon: FaPrint },
+          { to: "/admin/signup-key", label: "Signup Key", icon: FaKey },
+          { to: "/admin/currency", label: "Currency", icon: FaDollarSign }
+        ];
       case "cashier":
-        return (
-          <>
-            {createMenuItem("/cashier", "Order Management", FaCashRegister)}
-            {createMenuItem("/kitchen/menu", "Manage Menu", FaClipboardList)}
-            {createMenuItem("/kitchen", "Live Orders", FaShoppingCart)}
-            {createMenuItem("/cashier/orders", "Order History", FaHistory)}
-            {createMenuItem("/cashier/takeaway-orders", "Takeaway Orders", FaFirstOrder)}
-            {createMenuItem("/cashier/today", "Daily Report", FaBookOpen)}
-            {createMenuItem("/cashier-summery", "Cashier Summery", FaBookReader)}
-            {createMenuItem("/cashier/other-income", "Other Incomes", FaCoins)}
-            {createMenuItem("/cashier/other-expences", "Other Expences", FaWallet)}
-            {createMenuItem("/cashier/driver-register", "Driver Register", FaMotorcycle)}
-            {createMenuItem("/kitchen/kitchen-requestsForm", "Admin Requests", FaUtensils)}
-            {createMenuItem("/kitchen/attendance/add", "Live Attendance", FaUserClock)}
-            {createMenuItem("/printer-settings", "Printer Settings", FaPrint)}
-            
-          </>
-        );
+        return [
+          { to: "/cashier", label: "Order Management", icon: FaCashRegister },
+          { to: "/kitchen/menu", label: "Manage Menu", icon: FaClipboardList },
+          { to: "/kitchen", label: "Live Orders", icon: FaShoppingCart },
+          { to: "/cashier/orders", label: "Order History", icon: FaHistory },
+          { to: "/cashier/takeaway-orders", label: "Takeaway Orders", icon: FaFirstOrder },
+          { to: "/cashier/today", label: "Daily Report", icon: FaBookOpen },
+          { to: "/cashier-summery", label: "Cashier Summery", icon: FaBookReader },
+          { to: "/cashier/other-income", label: "Other Incomes", icon: FaCoins },
+          { to: "/cashier/other-expences", label: "Other Expences", icon: FaWallet },
+          { to: "/cashier/driver-register", label: "Driver Register", icon: FaMotorcycle },
+          { to: "/kitchen/kitchen-requestsForm", label: "Admin Requests", icon: FaUtensils },
+          { to: "/kitchen/attendance/add", label: "Live Attendance", icon: FaUserClock },
+          { to: "/printer-settings", label: "Printer Settings", icon: FaPrint }
+        ];
       case "kitchen":
-        return (
-          <>
-            {createMenuItem("/kitchen", "Live Orders", FaShoppingCart)}
-            {createMenuItem("/kitchen/history", "Order History", FaHistory)}
-            {createMenuItem("/kitchen/menu", "Manage Menu", FaClipboardList)}
-            {createMenuItem("/kitchen/kitchen-requestsForm", "Admin Requests", FaUtensils)}
-            {createMenuItem("/kitchen/attendance/add", "Attendance", FaUserClock)}
-          </>
-        );
+        return [
+          { to: "/kitchen", label: "Live Orders", icon: FaShoppingCart },
+          { to: "/kitchen/history", label: "Order History", icon: FaHistory },
+          { to: "/kitchen/menu", label: "Manage Menu", icon: FaClipboardList },
+          { to: "/kitchen/kitchen-requestsForm", label: "Admin Requests", icon: FaUtensils },
+          { to: "/kitchen/attendance/add", label: "Attendance", icon: FaUserClock }
+        ];
       case "user":
-        return (
-          <>
-            {createMenuItem("/user", "Mark Progress", FaBookReader)}
-            {createMenuItem("/user/comp-Level1", "Components", L1Icon)}
-            {createMenuItem("/user/comp-Level2", "Sub-Component ", L2Icon)}
-            {createMenuItem("/user/comp-Level3", "Activities", FaUserTag)}
-            {createMenuItem("/user/comp-Level4", "Sub-Activities", FaUsers)}
-            {createMenuItem("/user/comp-Level5", "Sub-Activity Items", FaCoins)}
-          </>
-        );
+        return [
+          { to: "/user", label: "Mark Progress", icon: FaBookReader },
+          { to: "/user/comp-Level1", label: "Components", icon: L1Icon },
+          { to: "/user/comp-Level2", label: "Sub-Component", icon: L2Icon },
+          { to: "/user/comp-Level3", label: "Activities", icon: FaUserTag },
+          { to: "/user/comp-Level4", label: "Sub-Activities", icon: FaUsers },
+          { to: "/user/comp-Level5", label: "Sub-Activity Items", icon: FaCoins }
+        ];
       default:
-        return null;
+        return [];
     }
   };
 
-  const getSidebarClass = () => {
-  // Open if: user toggled it OR (hovering + desktop + not manually opened)
-    const isOpen = sidebarOpen || (isHovered && !isMobile);
-    return isOpen ? "open" : "collapsed";
-  };
+  const menuItems = getMenuItems();
+  const filteredMenuItems = searchQuery
+    ? menuItems.filter(item => !item.divider && item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+    : menuItems;
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-    if (!sidebarOpen) {
-      setIsHovered(false); // close hover if manually opening
-    }
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   return (
-    <div className="layout d-flex">
-      {!isMobile || sidebarOpen ? (
-        <aside 
-        // className={`sidebar ${sidebarOpen ? "open" : "collapsed"}`}
-        className={`sidebar ${getSidebarClass()}`}
-        onMouseEnter={() => !isMobile && !sidebarOpen && setIsHovered(true)}
-        onMouseLeave={() => !isMobile && !sidebarOpen && setIsHovered(false)}
-        >
-          <div className="sidebar-header d-flex align-items-center">
-            {isSidebarExpanded && (
-              <>
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="sidebar-logo rounded-circle me-2"
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    objectFit: "cover",
-                    border: "2px solid #fff",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                  }}
-                />
-                <h3 className="justify-content-left sidebar-title mb-0">UNICORN INSTITUTE LMS</h3>
-              </>
-            )}
+    <div className={`apple-layout ${darkMode ? 'dark-mode' : ''}`}>
+      {/* Sidebar */}
+      <aside className={`apple-sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        {/* Logo Section */}
+        <div className="apple-sidebar-header">
+          <div className="apple-logo-wrapper">
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="apple-logo"
+            />
+            {!sidebarCollapsed && <span className="apple-logo-text">UNICORN INSTITUTE LMS</span>}
           </div>
-          <ul className="sidebar-menu">{renderSidebarMenu()}</ul>
-        </aside>
-      ) : null}
-
-      <div className="main-content flex-grow-1">
-        <header className="top-navbar">
-          <div className="navbar-left">
-            <button className="btn-toggle" onClick={toggleSidebar}>
+          {/* {isMobile ? (
+            <button onClick={() => setSidebarOpen(false)} className="apple-close-btn">
+              <FaTimes />
+            </button>
+          ) : (
+            <button onClick={toggleSidebarCollapse} className="apple-collapse-btn" title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
               <FaBars />
             </button>
-            <span className="session-timer">⏳ Session expires in: {countdown}</span>
-            <div >
-              <NotificationCenter />
+          )} */}
+        </div>
+
+        {/* Search Bar */}
+        {!sidebarCollapsed && (
+          <div className="apple-search-container">
+            <FaSearch className="apple-search-icon" />
+            <input
+              type="text"
+              placeholder="Search menu..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="apple-search-input"
+            />
+          </div>
+        )}
+
+        {/* Menu Items */}
+        <nav className="apple-nav">
+          {filteredMenuItems.map((item, index) => {
+            if (item.divider) {
+              return !sidebarCollapsed && <div key={`divider-${index}`} className="apple-divider" />;
+            }
+            
+            const Icon = item.icon;
+            const isActive = location.pathname === item.to;
+            
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`apple-menu-item ${isActive ? 'active' : ''}`}
+                onClick={() => isMobile && setSidebarOpen(false)}
+                title={sidebarCollapsed ? item.label : ''}
+              >
+                <Icon className="apple-menu-icon" />
+                {!sidebarCollapsed && <span className="apple-menu-label">{item.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User Info at Bottom */}
+        <div className="apple-sidebar-footer">
+          <div className="apple-user-info">
+            <div className="apple-user-avatar">
+              <FaUserCircle />
+            </div>
+            {!sidebarCollapsed && (
+              <div className="apple-user-details">
+                <div className="apple-user-name">{user?.name || 'User'}</div>
+                <div className="apple-user-role">{user?.role}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Overlay for mobile */}
+      {isMobile && sidebarOpen && (
+        <div className="apple-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Main Content */}
+      <div className="apple-main-content">
+        {/* Header */}
+        <header className="apple-header">
+          <div className="apple-header-left">
+            <button onClick={() => isMobile ? setSidebarOpen(!sidebarOpen) : toggleSidebarCollapse()} className="apple-menu-button">
+              <FaBars />
+            </button>
+            <div className="apple-session-timer">
+              <span className="apple-timer-dot" />
+              <span className="apple-timer-text">Session: {countdown}</span>
             </div>
           </div>
-          <div className="navbar-right" ref={dropdownRef}>
-            <div className="user-dropdown">
-              
-              <div
-                className="user-toggle"
+
+          <div className="apple-header-right">
+            {/* Dark Mode Toggle */}
+            <button 
+              onClick={toggleDarkMode} 
+              className="apple-theme-toggle"
+              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {darkMode ? <FaSun /> : <FaMoon />}
+            </button>
+
+            {/* Notifications */}
+            <div className="apple-notification-wrapper">
+              <NotificationCenter />
+            </div>
+
+            {/* User Dropdown */}
+            <div ref={dropdownRef} className="apple-user-dropdown-container">
+              <button
                 onClick={() => setUserDropdown(!userDropdown)}
-                style={{ cursor: "pointer" }}
+                className="apple-user-button"
               >
-                <FaUserCircle className="user-icon" />
-                <span className="user-role">{user?.role}</span>
-              </div>
+                <FaUserCircle />
+                <span className="apple-user-button-text">{user?.role}</span>
+              </button>
               {userDropdown && (
-                <div className="dropdown-menu show">
-                  <button className="dropdown-item" onClick={logout}>
-                    <FaSignOutAlt /> Logout
+                <div className="apple-dropdown">
+                  <button className="apple-dropdown-item" onClick={() => {
+                    setUserDropdown(false);
+                    // Add profile navigation if needed
+                  }}>
+                    <FaUserCircle className="apple-dropdown-icon" />
+                    Profile
+                  </button>
+                  <div className="apple-dropdown-divider" />
+                  <button className="apple-dropdown-item logout" onClick={handleLogout}>
+                    <FaSignOutAlt className="apple-dropdown-icon" />
+                    Logout
                   </button>
                 </div>
               )}
@@ -261,7 +310,8 @@ const RoleLayout = () => {
           </div>
         </header>
 
-        <main className="page-content">
+        {/* Page Content */}
+        <main className="apple-page-content">
           <Outlet />
         </main>
       </div>
