@@ -24,7 +24,7 @@ const TrackPayment = () => {
       );
       setCourses(res.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Track Payment Fetch Error:", err);
       toast.error("Failed to load payment tracking data");
       setCourses([]);
     } finally {
@@ -53,35 +53,6 @@ const TrackPayment = () => {
     </div>
   );
 
-  const formatDateRange = (course) => {
-    if (course.courseType === "monthly") {
-      const now = new Date();
-      return `Month of ${now.toLocaleString("default", {
-        month: "long",
-        year: "numeric",
-      })}`;
-    } else if (course.courseType === "weekly") {
-      const now = new Date();
-      const day = now.getDay(); // 0 = Sun
-      const diffToMonday = day === 0 ? -6 : 1 - day;
-      const start = new Date(now);
-      start.setDate(now.getDate() + diffToMonday);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
-    } else if (course.courseType === "other") {
-      const start = course.courseStartDate
-        ? new Date(course.courseStartDate).toLocaleDateString()
-        : "—";
-      const end = course.courseEndDate
-        ? new Date(course.courseEndDate).toLocaleDateString()
-        : "Ongoing";
-      return `${start} to ${end}`;
-    }
-    return "—";
-  };
-
   if (loading) {
     return (
       <div className="container py-5 text-center">
@@ -101,24 +72,37 @@ const TrackPayment = () => {
 
       {courses.length === 0 ? (
         <div className="alert alert-info">
-          No course payment data available.
+          No payment data available for monthly or other courses.
         </div>
       ) : (
         courses.map((course) => (
           <div
-            key={course.courseName} // or use course._id if added to response
+            key={`${course.courseName}-${course.courseType}`}
             className="mb-5 p-4 bg-white shadow-sm rounded border"
           >
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h4 className="mb-0">{course.courseName}</h4>
-              <span className="badge bg-secondary">
+              <span
+                className={`badge ${
+                  course.courseType === "monthly"
+                    ? "bg-primary"
+                    : course.courseType === "other"
+                    ? "bg-success"
+                    : "bg-secondary"
+                }`}
+              >
                 {course.courseType.toUpperCase()}
               </span>
             </div>
+
             <p className="text-muted small mb-3">
-              <strong>Fee:</strong> $
-              {(course.courseFees || 0).toFixed(2)} •
-              <strong> Period:</strong> {formatDateRange(course)}
+              <strong>Course Fee:</strong> $
+              {(course.courseFees || 0).toFixed(2)}
+              {course.courseType === "monthly" && (
+                <span className="ms-2">
+                  • Billed monthly from enrollment date
+                </span>
+              )}
             </p>
 
             {course.students.length === 0 ? (
@@ -130,18 +114,18 @@ const TrackPayment = () => {
                     <tr>
                       <th>Student ID</th>
                       <th>Student Name</th>
-                      <th>Paid</th>
+                      <th>Total Paid</th>
                       <th>Total Due</th>
                       <th>Progress</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {course.students.map((s, idx) => (
+                    {course.students.map((s) => (
                       <tr key={`${course.courseName}-${s.studentId}`}>
                         <td>{s.studentId}</td>
                         <td>{s.name}</td>
                         <td>${s.totalPaid.toFixed(2)}</td>
-                        <td>${(course.courseFees || 0).toFixed(2)}</td>
+                        <td>${s.totalDue.toFixed(2)}</td>
                         <td>
                           <div className="d-flex align-items-center">
                             <div style={{ width: "120px", marginRight: "8px" }}>

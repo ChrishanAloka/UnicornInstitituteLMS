@@ -44,59 +44,33 @@ exports.deleteCourse = async (req, res) => {
   }
 };
 
-// Helper: get start/end of current week (Monday to Sunday)
-function getWeekRange(date = new Date()) {
-  const d = new Date(date);
-  const day = d.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  const start = new Date(d.setDate(d.getDate() + diffToMonday));
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
-}
-
-// Helper: get start/end of current month
-function getMonthRange(date = new Date()) {
-  const start = new Date(date.getFullYear(), date.getMonth(), 1);
-  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
+// Helper: Full months between two dates (inclusive)
+function getFullMonthsBetween(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+  let months = (e.getFullYear() - s.getFullYear()) * 12;
+  months -= s.getMonth();
+  months += e.getMonth();
+  if (e.getDate() < s.getDate()) months--;
+  return Math.max(0, months + 1);
 }
 
 exports.getPaymentTracking = async (req, res) => {
   try {
     const currentDate = new Date();
-    const weekRange = getWeekRange(currentDate);
-    const monthRange = getMonthRange(currentDate);
 
-    // Fetch all courses (only necessary fields)
+    // Fetch only 'monthly' and 'other' courses with fees
     const courses = await Course.find({
-      courseFees: { $exists: true }
-    }).select('courseName courseType courseFees courseStartDate courseEndDate').lean();
+      courseType: { $in: ['monthly', 'other'] },
+      courseFees: { $ne: null }
+    }).select('courseName courseType courseFees').lean();
 
     const result = [];
 
     for (const course of courses) {
-      let paymentDateFilter;
-
-      if (course.courseType === 'monthly') {
-        paymentDateFilter = { $gte: monthRange.start, $lte: monthRange.end };
-      } else if (course.courseType === 'weekly') {
-        paymentDateFilter = { $gte: weekRange.start, $lte: weekRange.end };
-      } else if (course.courseType === 'other') {
-        if (!course.courseStartDate) continue;
-        const endDate = course.courseEndDate || new Date('9999-12-31');
-        paymentDateFilter = { $gte: course.courseStartDate, $lte: endDate };
-      } else {
-        continue; // skip unsupported types
-      }
-
-      // Find students enrolled in this course
       const students = await Student.find({
         'enrolledCourses.course': course._id
-      }).select('studentId name').lean();
+      }).select('studentId name enrolledCourses').lean();
 
       if (students.length === 0) continue;
 
@@ -108,6 +82,32 @@ exports.getPaymentTracking = async (req, res) => {
       };
 
       for (const student of students) {
+        const enrollment = student.enrolledCourses.find(
+          ec => ec.course?.toString() === course._id.toString()
+        );
+
+        if (!enrollment?.startDate) continue;
+
+        const startDate = new Date(enrollment.startDate);
+        let endDate = enrollment.endDate ? new Date(enrollment.endDate) : null;
+        let totalDue = 0;
+        let paymentDateFilter = {};
+
+        if (course.courseType === 'monthly') {
+          // Monthly: total due = elapsed months × fee
+          const months = getFullMonthsBetween(startDate, currentDate);
+          totalDue = months * course.courseFees;
+          // Payments from enrollment start → today
+          paymentDateFilter = { $gte: startDate, $lte: currentDate };
+        } 
+        else if (course.courseType === 'other') {
+          // Other: total due = courseFees (one-time)
+          totalDue = course.courseFees;
+          // Payments from startDate → endDate (or today if no end)
+          const payEnd = endDate && endDate < currentDate ? endDate : currentDate;
+          paymentDateFilter = { $gte: startDate, $lte: payEnd };
+        }
+
         const payments = await Payment.find({
           student: student._id,
           course: course._id,
@@ -115,24 +115,29 @@ exports.getPaymentTracking = async (req, res) => {
         }).lean();
 
         const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-        const progressPercent = course.courseFees
-          ? Math.min(100, Math.round((totalPaid / course.courseFees) * 100))
+        const progressPercent = totalDue > 0
+          ? Math.min(100, Math.round((totalPaid / totalDue) * 100))
           : totalPaid > 0 ? 100 : 0;
 
         courseData.students.push({
           studentId: student.studentId,
           name: student.name,
           totalPaid,
-          progressPercent
+          totalDue,
+          progressPercent,
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate ? endDate.toISOString().split('T')[0] : null
         });
       }
 
-      result.push(courseData);
+      if (courseData.students.length > 0) {
+        result.push(courseData);
+      }
     }
 
     res.json(result);
   } catch (error) {
-    console.error('Payment Tracking Error:', error);
-    res.status(500).json({ error: 'Failed to retrieve payment tracking data' });
+    console.error('Track Payment Error:', error);
+    res.status(500).json({ error: 'Failed to load data' });
   }
 };

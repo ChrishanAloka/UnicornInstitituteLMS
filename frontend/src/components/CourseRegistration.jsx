@@ -103,6 +103,16 @@ const CourseRegistration = () => {
   };
 
   const openEditModal = (course) => {
+    // Helper to format date from ISO to YYYY-MM-DD
+    const formatDateForInput = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        // Use UTC to avoid timezone shifting the day
+        return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .split("T")[0];
+    };
+
     setEditingCourse(course._id);
     setEditData({
       courseName: course.courseName,
@@ -111,7 +121,10 @@ const CourseRegistration = () => {
       timeTo: course.timeTo,
       description: course.description || "",
       courseType: course.courseType || "weekly",
-      instructor: course.instructor?._id || course.instructor || ""
+      instructor: course.instructor?._id || course.instructor || "",
+      courseStartDate: formatDateForInput(course.courseStartDate) || "",
+      courseEndDate: formatDateForInput(course.courseEndDate) || "",
+      courseFees: course.courseFees || ""
     });
   };
 
@@ -256,8 +269,8 @@ const CourseRegistration = () => {
               ))}
             </select>
           </div>
-          {newCourse.courseType === "other" && (
-            <>
+          {/* {newCourse.courseType === "other" && (
+            <> */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Course Start Date *</label>
                 <input
@@ -269,7 +282,7 @@ const CourseRegistration = () => {
                   required
                 />
               </div>
-              <div className="col-md-6">
+              {/* <div className="col-md-6">
                 <label className="form-label fw-semibold">Course End Date (Optional)</label>
                 <input
                   type="date"
@@ -278,9 +291,9 @@ const CourseRegistration = () => {
                   onChange={handleChange}
                   className="form-control"
                 />
-              </div>
-            </>
-          )}
+              </div> */}
+            {/* </>
+          )} */}
           <div className="col-md-6">
             <label className="form-label fw-semibold">Course Fees (Optional)</label>
             <input
@@ -420,8 +433,8 @@ const CourseRegistration = () => {
                     <input
                       type="number"
                       name="courseFees"
-                      value={newCourse.courseFees}
-                      onChange={handleChange}
+                      value={editData.courseFees}
+                      onChange={handleEditChange}
                       className="form-control"
                       min="0"
                       step="0.01"
