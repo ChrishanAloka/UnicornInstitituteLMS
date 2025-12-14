@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-import html5QrCode from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
+
 
 const Attendance = () => {
   const [input, setInput] = useState("");
@@ -116,55 +117,52 @@ const Attendance = () => {
   };
 
   // ✅ QR SCANNER
-  const startScanner = () => {
+  const startScanner = async () => {
     if (isScanning || isScannerActive.current) return;
+
     setIsScanning(true);
     resetState();
-    setTimeout(() => {
-      if (isScannerActive.current) return;
-      const html5QrCode = new html5QrCode("qr-reader");
-      html5QrCodeRef.current = html5QrCode;
+
+    try {
+      const qrCode = new Html5Qrcode("qr-reader");
+      html5QrCodeRef.current = qrCode;
       isScannerActive.current = true;
-      html5QrCode
-        .start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            setInput(decodedText.trim());
-            stopScanner();
-          },
-          () => {}
-        )
-        .catch(() => {
-          toast.error("Camera access denied. Please allow permission.");
+
+      await qrCode.start(
+        { facingMode: "environment" }, // back camera
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        (decodedText) => {
+          setInput(decodedText.trim());
           stopScanner();
-        });
-    }, 100);
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Camera access failed. Use HTTPS & allow permission.");
+      stopScanner();
+    }
   };
 
-  const stopScanner = () => {
-    if (!isScannerActive.current) {
+
+  const stopScanner = async () => {
+    if (!html5QrCodeRef.current) {
       setIsScanning(false);
       return;
     }
-    const html5QrCode = html5QrCodeRef.current;
-    if (html5QrCode) {
-      html5QrCode
-        .stop()
-        .then(() => html5QrCode.clear())
-        .then(() => {
-          isScannerActive.current = false;
-          setIsScanning(false);
-        })
-        .catch(() => {
-          isScannerActive.current = false;
-          setIsScanning(false);
-        });
-    } else {
-      isScannerActive.current = false;
-      setIsScanning(false);
-    }
+
+    try {
+      await html5QrCodeRef.current.stop();
+      await html5QrCodeRef.current.clear();
+    } catch (e) {}
+
+    html5QrCodeRef.current = null;
+    isScannerActive.current = false;
+    setIsScanning(false);
   };
+
 
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return "";

@@ -9,8 +9,7 @@ import {
   FaMoneyCheckAlt, FaUtensils, FaDollarSign, FaShoppingCart, FaHistory,
   FaBookOpen, FaClipboardList, FaUserCircle, FaPercentage, FaTruckLoading, 
   FaFirstOrder, FaMotorcycle, FaUserClock, FaCashRegister, FaBookReader,
-  FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun,
-  FaUserGraduate,FaChalkboardTeacher,FaBook, FaUserCheck,FaUserPlus, FaChartLine, FaMoneyCheckAlt as FaPayment,
+  FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun, FaUserGraduate,FaChalkboardTeacher,FaBook, FaUserCheck,FaUserPlus, FaChartLine, FaMoneyCheckAlt as FaPayment,
 } from "react-icons/fa";
 import NotificationCenter from "./NotificationCenter";
 import "./AppleRoleLayout.css";
