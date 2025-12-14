@@ -1,7 +1,8 @@
 // src/components/StudentProfile.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
+import Html5QrCode from "html5-qrcode";
 
 const StudentProfile = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +23,10 @@ const StudentProfile = () => {
   const [dateInputs, setDateInputs] = useState({}); // { courseId: { startDate, endDate } }
   const [editingEnrollmentId, setEditingEnrollmentId] = useState(null);
   const [editDates, setEditDates] = useState({ startDate: "", endDate: "" });
+  const html5QrCodeRef = useRef(null);
+  const isScannerActive = useRef(false);
+  const [isScanning, setIsScanning] = useState(false);
+  
 
   useEffect(() => {
     fetchAllCourses();
@@ -83,6 +88,68 @@ const StudentProfile = () => {
       setLoading(false);
     }
   };
+
+  const startScanner = () => {
+    if (isScanning || isScannerActive.current) return;
+    setIsScanning(true);
+    setSearchTerm(""); // clear any existing input
+    setStudent(null);
+    setTimeout(() => {
+      if (isScannerActive.current) return;
+      const html5QrCode = new html5QrCode("qr-reader");
+      html5QrCodeRef.current = html5QrCode;
+      isScannerActive.current = true;
+      html5QrCode
+        .start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            setSearchTerm(decodedText.trim());
+            stopScanner();
+          },
+          () => {}
+        )
+        .catch(() => {
+          toast.error("Camera access denied.");
+          stopScanner();
+        });
+    }, 100);
+  };
+
+  const stopScanner = () => {
+    if (!isScannerActive.current) {
+      setIsScanning(false);
+      return;
+    }
+    const html5QrCode = html5QrCodeRef.current;
+    if (html5QrCode) {
+      html5QrCode
+        .stop()
+        .then(() => html5QrCode.clear())
+        .then(() => {
+          isScannerActive.current = false;
+          setIsScanning(false);
+        })
+        .catch(() => {
+          isScannerActive.current = false;
+          setIsScanning(false);
+        });
+    } else {
+      isScannerActive.current = false;
+      setIsScanning(false);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isScannerActive.current && html5QrCodeRef.current) {
+        html5QrCodeRef.current.stop().then(() => {
+          html5QrCodeRef.current.clear().catch(() => {});
+        }).catch(() => {});
+      }
+    };
+  }, []);
 
   const openPaymentModal = (courseId, courseName) => {
     setNewPayment({
@@ -222,23 +289,67 @@ const StudentProfile = () => {
       {/* Search Form */}
       <form onSubmit={handleSearch} className="mb-5 p-4 bg-white shadow-sm rounded border">
         <div className="row g-3">
-          <div className="col-md-8">
+          <div className="col-md-7">
             <label className="form-label fw-semibold">Search Student (by ID or Name)</label>
-            <input
-              type="text"
-              className="form-control"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Enter student ID or name"
-              required
-            />
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Enter student ID, name, or scan QR"
+              />
+              {(searchTerm || student) && (
+                <button
+                  className="btn btn-outline-secondary"
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setStudent(null);
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
-          <div className="col-md-4 d-flex align-items-end">
+          <div className="col-md-3 d-flex align-items-end">
+            <button
+              type="button"
+              className="btn btn-outline-primary w-100"
+              onClick={startScanner}
+              disabled={isScanning}
+            >
+              📷 Scan QR
+            </button>
+          </div>
+          <div className="col-md-2 d-flex align-items-end">
             <button type="submit" className="btn btn-primary w-100" disabled={loading}>
               {loading ? "Searching..." : "🔍 Search"}
             </button>
           </div>
         </div>
+
+        {/* QR Scanner Container */}
+        <div
+          id="profile-qr-reader"
+          style={{
+            width: "100%",
+            height: isScanning ? "300px" : "0",
+            overflow: "hidden",
+            marginTop: isScanning ? "1rem" : "0",
+            transition: "height 0.3s"
+          }}
+        ></div>
+        {isScanning && (
+          <button
+            type="button"
+            className="btn btn-secondary mt-2"
+            onClick={stopScanner}
+          >
+            Cancel Scan
+          </button>
+        )}
       </form>
 
       {student && (

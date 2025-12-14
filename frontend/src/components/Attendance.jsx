@@ -22,13 +22,22 @@ const Attendance = () => {
   }, []);
 
   // Auto-search student when input changes (3+ chars)
-  useEffect(() => {
-    if (input.trim().length >= 3 && selectedDate) {
-      fetchStudent();
-    } else {
-      resetState();
+  // useEffect(() => {
+  //   if (input.trim().length >= 3 && selectedDate) {
+  //     fetchStudent();
+  //   } else {
+  //     resetState();
+  //   }
+  // }, [input, selectedDate]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!input.trim()) {
+      toast.warn("Please enter a student ID or name");
+      return;
     }
-  }, [input, selectedDate]);
+    fetchStudent();
+  };
 
   // Cleanup scanner on unmount
   useEffect(() => {
@@ -183,89 +192,96 @@ const Attendance = () => {
     <div className="container py-4">
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Attendance</h2>
 
-      {/* Input + Date + Scan */}
-      <div className="mb-5 p-4 bg-white shadow-sm rounded border">
-        <div className="row g-3">
-          <div className="col-md-5">
-            <label className="form-label fw-semibold">Student ID or Name</label>
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type ID/name or scan QR"
-                autoFocus
-              />
-              <button
-                className="btn btn-outline-primary"
-                type="button"
-                onClick={startScanner}
-                disabled={isScanning}
-              >
-                📷 Scan
-              </button>
-              {(input || student) && (
+      <form onSubmit={handleSearch} className="mb-5 p-4 bg-white shadow-sm rounded border">
+        {/* Input + Date + Scan */}
+        <div className="mb-5 p-4 bg-white shadow-sm rounded border">
+          <div className="row g-3">
+            <div className="col-md-7">
+              <label className="form-label fw-semibold">Student ID or Name</label>
+              <div className="input-group gap-2">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type ID/name or scan QR"
+                  autoFocus
+                />
                 <button
-                  className="btn btn-outline-secondary"
+                  className="btn btn-outline-primary"
                   type="button"
-                  onClick={handleInputClear}
+                  onClick={startScanner}
+                  disabled={isScanning}
                 >
-                  ✕
+                  📷 Scan
                 </button>
+                <div className="col-md-2 d-flex align-items-end">
+                  <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+                    {loading ? "Searching..." : "🔍 Search"}
+                  </button>
+                </div>
+                {(input || student) && (
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={handleInputClear}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {loading && (
+                <div className="mt-2 text-muted">
+                  <span className="spinner-border spinner-border-sm"></span> Loading...
+                </div>
               )}
             </div>
-            {loading && (
-              <div className="mt-2 text-muted">
-                <span className="spinner-border spinner-border-sm"></span> Loading...
+            <div className="col-md-3">
+              <label className="form-label fw-semibold">Date</label>
+              <input
+                type="date"
+                max={new Date().toISOString().split("T")[0]}
+                className="form-control"
+                value={selectedDate}
+                onChange={handleDateChange}
+              />
+            </div>
+            <div className="col-md-2">
+              <div className="w-100 text-center p-2 bg-light rounded">
+                <small className="text-muted">
+                  Selected: {formatDateDisplay(selectedDate)}
+                </small>
               </div>
-            )}
-          </div>
-          <div className="col-md-4">
-            <label className="form-label fw-semibold">Date</label>
-            <input
-              type="date"
-               max={new Date().toISOString().split("T")[0]}
-              className="form-control"
-              value={selectedDate}
-              onChange={handleDateChange}
-            />
-          </div>
-          <div className="col-md-3">
-            <div className="w-100 text-center p-2 bg-light rounded">
-              <small className="text-muted">
-                Selected: {formatDateDisplay(selectedDate)}
-              </small>
-            </div>
-            <div className="w-100 text-center p-2 bg-light rounded">
-              <small className="text-muted">
-                Today: {new Date().toISOString().split("T")[0]}
-              </small>
+              <div className="w-100 text-center p-2 bg-light rounded">
+                <small className="text-muted">
+                  Today: {new Date().toISOString().split("T")[0]}
+                </small>
+              </div>
             </div>
           </div>
+
+          {/* QR Reader (always in DOM) */}
+          <div
+            id="qr-reader"
+            style={{
+              width: "100%",
+              height: isScanning ? "300px" : "0",
+              overflow: "hidden",
+              marginTop: isScanning ? "1rem" : "0",
+              transition: "height 0.3s"
+            }}
+          ></div>
+
+          {isScanning && (
+            <button
+              className="btn btn-secondary mt-2"
+              onClick={stopScanner}
+            >
+              Cancel Scan
+            </button>
+          )}
         </div>
-
-        {/* QR Reader (always in DOM) */}
-        <div
-          id="qr-reader"
-          style={{
-            width: "100%",
-            height: isScanning ? "300px" : "0",
-            overflow: "hidden",
-            marginTop: isScanning ? "1rem" : "0",
-            transition: "height 0.3s"
-          }}
-        ></div>
-
-        {isScanning && (
-          <button
-            className="btn btn-secondary mt-2"
-            onClick={stopScanner}
-          >
-            Cancel Scan
-          </button>
-        )}
-      </div>
+      </form>
 
       {/* Student & Courses */}
       {student && !isScanning && (

@@ -183,6 +183,11 @@ const CourseRegistration = () => {
   // Helper: capitalize first letter
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "-";
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString();
+  };
+
   return (
     <div className="container py-4">
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Register Course</h2>
@@ -402,8 +407,8 @@ const CourseRegistration = () => {
                       <option value="other">Other</option>
                     </select>
                   </div>
-                  {editData.courseType === "other" && (
-                    <>
+                  {/* {editData.courseType === "other" && (
+                    <> */}
                       <div className="mb-3">
                         <label className="form-label">Course Start Date *</label>
                         <input
@@ -425,8 +430,8 @@ const CourseRegistration = () => {
                           className="form-control"
                         />
                       </div>
-                    </>
-                  )}
+                    {/* </>
+                  )} */}
                   
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">Course Fees (Optional)</label>
@@ -489,12 +494,14 @@ const CourseRegistration = () => {
               <th>Time</th>
               <th>Type</th>
               <th>Instructor</th>
+              <th>Start Date</th>
+              <th>Course Fees</th>
               <th className="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {courses.length === 0 ? (
-              <tr><td colSpan="6" className="text-center text-muted">No courses</td></tr>
+              <tr><td colSpan="8" className="text-center text-muted">No courses</td></tr>
             ) : (
               courses.map(c => (
                 <tr key={c._id}>
@@ -503,6 +510,8 @@ const CourseRegistration = () => {
                   <td>{c.timeFrom} – {c.timeTo}</td>
                   <td>{capitalize(c.courseType)}</td>
                   <td>{c.instructor?.name || "-"}</td>
+                  <td>{formatDate(c.courseStartDate) || "-"}</td>
+                  <td>{c.courseFees || "-"}</td>
                   <td className="text-center">
                     <button className="btn btn-sm btn-primary me-2" onClick={() => openEditModal(c)}>Edit</button>
                     <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c._id)}>Delete</button>

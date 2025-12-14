@@ -87,6 +87,8 @@ import ClassTimetable from "./components/ClassTimetable";
 import Attendance from "./components/Attendance";
 import StudentProfile from "./components/StudentProfile";
 import TrackPayment from "./components/TrackPayment";
+import TrackAttendance from "./components/TrackAttendance";
+
 
 <Route path="/unauthorized" element={<Unauthorized />} />
 
@@ -183,7 +185,8 @@ function App() {
             <Route path="/user/comp-Level2" element={<CourseRegistration />} />
             <Route path="/user/comp-Level3" element={<Attendance />} />
             <Route path="/user/comp-Level4" element={<StudentProfile />} />
-            <Route path="/user/comp-Level5" element={<TrackPayment />} />
+            <Route path="/user/track-payment" element={<TrackPayment />} />
+            <Route path="/user/track-attendance" element={<TrackAttendance />} />
             
           </Route>
           
