@@ -55,7 +55,7 @@ const Home = () => {
             User Login
           </Link>
 
-          <Link className="btn btn-lg btn-outline-success fw-semibold" to="/admin-login">
+          <Link className="btn btn-lg btn-outline-success fw-semibold" to="/">
             Admin Login
           </Link>
         </div>
@@ -66,13 +66,21 @@ const Home = () => {
         <p className="mt-3 text-muted">New user? Register as:</p>
 
         <div className="d-grid gap-2 mt-2">
-          <Link className="btn btn-primary btn-sm fw-semibold" to="/signup?role=user">
+          <Link className="btn btn-primary btn-sm fw-semibold" to="/">
+            Sign Up as User
+          </Link>
+
+          <Link className="btn btn-success btn-sm fw-semibold" to="/">
+            Sign Up as Admin
+          </Link>
+
+          {/* <Link className="btn btn-primary btn-sm fw-semibold" to="/signup?role=user">
             Sign Up as User
           </Link>
 
           <Link className="btn btn-success btn-sm fw-semibold" to="/signup?role=admin">
             Sign Up as Admin
-          </Link>
+          </Link> */}
         </div>
       </div>
     </div>
