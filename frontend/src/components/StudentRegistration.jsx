@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import "react-toastify/dist/ReactToastify.css";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useNavigate } from "react-router-dom";
 
 const StudentRegistration = () => {
   const [students, setStudents] = useState([]);
@@ -31,6 +32,7 @@ const StudentRegistration = () => {
     const random = Math.floor(1000 + Math.random() * 9000);
     return `STU${timestamp}${random}`;
   };
+  const navigate = useNavigate();
 
   // Load students on mount
   useEffect(() => {
@@ -608,6 +610,12 @@ const StudentRegistration = () => {
                       onClick={() => setViewingStudent(s)}
                     >
                       🪪 View Card
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-secondary me-2" 
+                      onClick={() => navigate(`/user/comp-Level4?studentId=${s._id}`)}
+                    >
+                      👤 Profile
                     </button>
                     <button className="btn btn-sm btn-primary me-2" onClick={() => openEditModal(s)}>
                       ✏️ Edit

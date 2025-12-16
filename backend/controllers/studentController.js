@@ -76,6 +76,26 @@ exports.searchStudent = async (req, res) => {
   }
 };
 
+exports.getStudentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const student = await Student.findById(id)
+      .populate('enrolledCourses.course', 'courseName dayOfWeek timeFrom timeTo')
+      .lean(); // lean() returns plain object, slightly faster
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json(student);
+  } catch (error) {
+    console.error('Error fetching student by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch student' });
+  }
+};
+
+
 // @desc    Register a new student
 // @route   POST /api/auth/student/register
 // @access  Private (admin or authorized user)

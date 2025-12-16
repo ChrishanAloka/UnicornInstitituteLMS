@@ -3,7 +3,7 @@ import React, { useState, useEffect,useRef } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import { Html5Qrcode } from "html5-qrcode";
-
+import { useSearchParams } from "react-router-dom";
 
 const StudentProfile = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,11 +27,40 @@ const StudentProfile = () => {
   const html5QrCodeRef = useRef(null);
   const isScannerActive = useRef(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [searchParams] = useSearchParams();
   
 
   useEffect(() => {
     fetchAllCourses();
   }, []);
+
+  // Auto-load student if studentId is in URL (e.g. from "Profile" button)
+  useEffect(() => {
+    const studentId = searchParams.get("studentId");
+    if (studentId) {
+      (async () => {
+        setLoading(true);
+        try {
+          const token = localStorage.getItem("token");
+          // ✅ Now using /students/:id endpoint
+          const res = await axios.get(
+            `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setStudent(res.data);
+          setEnrolledCourses(res.data.enrolledCourses || []);
+          fetchPayments(res.data._id);
+          setSearchTerm(""); // clear manual search
+        } catch (err) {
+          toast.error("Failed to load student profile");
+          setStudent(null);
+          setEnrolledCourses([]);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+  }, [searchParams]);
 
   const fetchAllCourses = async () => {
     try {

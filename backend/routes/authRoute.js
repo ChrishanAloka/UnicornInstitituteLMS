@@ -263,6 +263,7 @@ router.delete('/students/:studentId/unenroll/:enrollmentId', authMiddleware(["ad
 router.get('/students/:studentId/payments', authMiddleware(["admin", "user"]), studentController.getStudentPayments);
 router.post('/students/payments', authMiddleware(["admin", "user"]), studentController.createPayment);
 router.put('/students/:studentId/enrollments/:enrollmentId', authMiddleware(["admin", "user"]), studentController.updateEnrollmentDates);
+router.get('/students/:id', authMiddleware(["admin", "user"]), studentController.getStudentById);
 
 // Instructors
 router.post('/instructor/register', authMiddleware(["admin", "user"]), instructorController.registerInstructor);
