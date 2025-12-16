@@ -125,7 +125,7 @@ const SalaryPage = () => {
     <h2 className="mb-4 fw-bold text-primary">Record Employee Salary</h2>
 
     {/* Salary Form */}
-    <form onSubmit={handleSubmit} className="mb-4 p-4 bg-light border rounded shadow-sm">
+    <form onSubmit={handleSubmit} className="mb-4 p-4 bg-body border rounded shadow-sm">
       <div className="row g-3">
         <div className="col-md-6">
           <label className="form-label">Select Employee *</label>

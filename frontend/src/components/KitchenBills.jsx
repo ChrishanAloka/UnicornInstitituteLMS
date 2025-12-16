@@ -155,7 +155,7 @@ const KitchenBills = () => {
       <h2 className="mb-4 fw-bold text-primary border-bottom pb-2">Restaurant Bills</h2>
 
       {/* Add Bill Form */}
-      <form onSubmit={handleSubmit} className="p-4 bg-white border rounded shadow-sm mb-5">
+      <form onSubmit={handleSubmit} className="p-4 bg-body border rounded shadow-sm mb-5">
         <div className="row g-3">
           <div className="col-md-6">
             <label className="form-label fw-semibold">Bill Type</label>
@@ -389,7 +389,7 @@ const KitchenBills = () => {
         </div>
 
       {/* Monthly Summary */}
-      {/* <div className="mt-4 p-3 bg-white border rounded shadow-sm">
+      {/* <div className="mt-4 p-3 bg-body border rounded shadow-sm">
         <h5>Monthly Summary</h5>
         <ul className="list-group">
           <li className="list-group-item d-flex justify-content-between align-items-center">

@@ -358,7 +358,7 @@ const MarkActivityItemProgress = () => {
           {/* Progress Summary */}
           <div className="row mb-4">
             <div className="col-md-6">
-              <div className="card bg-light">
+              <div className="card bg-body">
                 <div className="card-body">
                   <h6>Physical Progress</h6>
                   <div className="progress" style={{ height: "20px" }}>
@@ -374,7 +374,7 @@ const MarkActivityItemProgress = () => {
               </div>
             </div>
             <div className="col-md-6">
-              <div className="card bg-light">
+              <div className="card bg-body">
                 <div className="card-body">
                   <h6>Financial Progress</h6>
                   <div className="progress" style={{ height: "20px" }}>
@@ -394,7 +394,7 @@ const MarkActivityItemProgress = () => {
           {/* Spending Progress Bar */}
           <div className="row mb-4">
             <div className="col-md-12">
-              <div className="card bg-light">
+              <div className="card bg-body">
                 <div className="card-body">
                   <div className="mb-4">
                     <h6>Budget Utilization</h6>
@@ -420,7 +420,7 @@ const MarkActivityItemProgress = () => {
           {/* Financial Summary */}
           <div className="row mb-4">
             <div className="col-md-4">
-              <div className="card bg-light">
+              <div className="card bg-body">
                 <div className="card-body text-center">
                   <h6 className="text-muted mb-1">Estimated Amount</h6>
                   <h5 className="text-primary fw-bold">{formatCurrency(financialSummary.estimatedAmount)}</h5>
@@ -428,7 +428,7 @@ const MarkActivityItemProgress = () => {
               </div>
             </div>
             <div className="col-md-4">
-              <div className="card bg-light">
+              <div className="card bg-body">
                 <div className="card-body text-center">
                   <h6 className="text-muted mb-1">Total Spent</h6>
                   <h5 className="text-danger fw-bold">{formatCurrency(financialSummary.totalSpent)}</h5>
@@ -436,7 +436,7 @@ const MarkActivityItemProgress = () => {
               </div>
             </div>
             <div className="col-md-4">
-              <div className="card bg-light">
+              <div className="card bg-body">
                 <div className="card-body text-center">
                   <h6 className="text-muted mb-1">Balance</h6>
                   <h5 className="text-success fw-bold">{formatCurrency(financialSummary.balance)}</h5>

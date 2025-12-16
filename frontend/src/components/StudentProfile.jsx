@@ -285,7 +285,7 @@ const StudentProfile = () => {
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Student Profile</h2>
 
       {/* Search Form */}
-      <form onSubmit={handleSearch} className="mb-5 p-4 bg-white shadow-sm rounded border">
+      <form onSubmit={handleSearch} className="mb-5 p-4 bg-body shadow-sm rounded border">
         <div className="row g-3">
           <div className="col-md-7">
             <label className="form-label fw-semibold">Search Student (by ID or Name)</label>
@@ -351,7 +351,7 @@ const StudentProfile = () => {
       </form>
 
       {student && (
-        <div className="mb-5 p-4 bg-white shadow-sm rounded border">
+        <div className="mb-5 p-4 bg-body shadow-sm rounded border">
           <h4 className="mb-3">Student Details</h4>
           <div className="row">
             <div className="col-md-6">
@@ -433,7 +433,7 @@ const StudentProfile = () => {
               <h4 className="mb-3 text-secondary mt-5">Enrolled Courses</h4>
               <div className="table-responsive">
                 <table className="table table-hover">
-                  <thead className="table-light">
+                  <thead>
                     <tr>
                       <th>Course</th>
                       <th>Day & Time</th>
@@ -542,7 +542,7 @@ const StudentProfile = () => {
               ) : (
                 <div className="table-responsive">
                   <table className="table table-hover">
-                    <thead className="table-light">
+                    <thead>
                       <tr>
                         <th>Date</th>
                         <th>Course</th>

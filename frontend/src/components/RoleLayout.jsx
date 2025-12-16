@@ -56,8 +56,10 @@ const RoleLayout = () => {
   useEffect(() => {
     if (darkMode) {
       document.body.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
     } else {
       document.body.classList.remove('dark-mode');
+      document.documentElement.removeAttribute('data-bs-theme');
     }
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [darkMode]);

@@ -33,6 +33,11 @@ const studentSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  // >>> NEW FIELDS <<<
+  email: { type: String, trim: true }, // optional
+  guardianName: { type: String, required: true, trim: true },
+  guardianPhoneNo: { type: String, required: true, trim: true },
+  nicNumber: { type: String, trim: true }, // optional
   // NEW: Enrolled courses with dates
   enrolledCourses: [{
     course: {

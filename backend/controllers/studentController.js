@@ -81,9 +81,16 @@ exports.searchStudent = async (req, res) => {
 // @access  Private (admin or authorized user)
 exports.registerStudent = async (req, res) => {
   try {
-    const { studentId, name, birthday, address, school, currentGrade, phoneNo } = req.body;
+    const { 
+      studentId, name, birthday, address, school, currentGrade, phoneNo,
+      email, guardianName, guardianPhoneNo, nicNumber 
+    } = req.body;
 
-    // Check if studentId already exists
+    // Validate mandatory new fields
+    if (!guardianName || !guardianPhoneNo) {
+      return res.status(400).json({ error: 'Guardian name and phone number are required' });
+    }
+
     const existing = await Student.findOne({ studentId });
     if (existing) {
       return res.status(400).json({ error: 'Student ID already exists' });
@@ -96,7 +103,11 @@ exports.registerStudent = async (req, res) => {
       address,
       school,
       currentGrade,
-      phoneNo
+      phoneNo,
+      email,
+      guardianName,
+      guardianPhoneNo,
+      nicNumber
     });
 
     const saved = await student.save();
@@ -126,9 +137,16 @@ exports.getStudents = async (req, res) => {
 exports.updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { studentId, name, birthday, address, school, currentGrade, phoneNo } = req.body;
+    const { 
+      studentId, name, birthday, address, school, currentGrade, phoneNo,
+      email, guardianName, guardianPhoneNo, nicNumber 
+    } = req.body;
 
-    // Prevent duplicate studentId from another record
+    // Validate mandatory new fields on update
+    if (!guardianName || !guardianPhoneNo) {
+      return res.status(400).json({ error: 'Guardian name and phone number are required' });
+    }
+
     const existing = await Student.findOne({ studentId, _id: { $ne: id } });
     if (existing) {
       return res.status(400).json({ error: 'Student ID already in use' });
@@ -136,7 +154,10 @@ exports.updateStudent = async (req, res) => {
 
     const updated = await Student.findByIdAndUpdate(
       id,
-      { studentId, name, birthday, address, school, currentGrade, phoneNo },
+      { 
+        studentId, name, birthday, address, school, currentGrade, phoneNo,
+        email, guardianName, guardianPhoneNo, nicNumber 
+      },
       { new: true, runValidators: true }
     );
 

@@ -34,7 +34,7 @@ const handleLogin = async (e) => {
 };
 
   return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-body">
       <div className="card shadow-sm p-4" style={{ maxWidth: "400px", width: "100%" }}>
         <h4 className="text-center mb-4">Admin Login</h4>
         <form onSubmit={handleLogin}>

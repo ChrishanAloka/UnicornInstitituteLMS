@@ -190,9 +190,9 @@ const Attendance = () => {
     <div className="container py-4">
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Attendance</h2>
 
-      <form onSubmit={handleSearch} className="mb-5 p-4 bg-white shadow-sm rounded border">
+      <form onSubmit={handleSearch} className="mb-5 p-4 bg-body shadow-sm rounded border">
         {/* Input + Date + Scan */}
-        <div className="mb-5 p-4 bg-white shadow-sm rounded border">
+        <div className="mb-5 p-4 bg-body shadow-sm rounded border">
           <div className="row g-3">
             <div className="col-md-7">
               <label className="form-label fw-semibold">Student ID or Name</label>
@@ -245,12 +245,12 @@ const Attendance = () => {
               />
             </div>
             <div className="col-md-2">
-              <div className="w-100 text-center p-2 bg-light rounded">
+              <div className="w-100 text-center p-2 bg-body rounded">
                 <small className="text-muted">
                   Selected: {formatDateDisplay(selectedDate)}
                 </small>
               </div>
-              <div className="w-100 text-center p-2 bg-light rounded">
+              <div className="w-100 text-center p-2 bg-body rounded">
                 <small className="text-muted">
                   Today: {new Date().toISOString().split("T")[0]}
                 </small>
@@ -284,7 +284,7 @@ const Attendance = () => {
       {/* Student & Courses */}
       {student && !isScanning && (
         <>
-          <div className="mb-4 p-4 bg-white shadow-sm rounded border">
+          <div className="mb-4 p-4 bg-body shadow-sm rounded border">
             <h4 className="mb-2">✅ {student.name}</h4>
             <p className="text-muted mb-1">
               <strong>ID:</strong> {student.studentId} • <strong>Grade:</strong> {student.currentGrade || "—"}
@@ -302,7 +302,7 @@ const Attendance = () => {
           ) : (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
-                <thead className="table-light">
+                <thead>
                   <tr>
                     <th>Course</th>
                     <th>Time</th>

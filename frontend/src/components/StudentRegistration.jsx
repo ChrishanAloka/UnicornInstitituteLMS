@@ -13,7 +13,11 @@ const StudentRegistration = () => {
     address: "",
     school: "",
     currentGrade: "",
-    phoneNo: ""
+    phoneNo: "",
+    email: "",               // optional
+    guardianName: "",        // mandatory
+    guardianPhoneNo: "",     // mandatory
+    nicNumber: ""  
   });
   const [editingStudent, setEditingStudent] = useState(null);
   const [editData, setEditData] = useState({ ...newStudent });
@@ -48,8 +52,12 @@ const StudentRegistration = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
 
-    const { name, birthday, address, school, currentGrade, phoneNo } = newStudent;
-    if (!name || !birthday || !phoneNo) {
+    const { 
+      name, birthday, phoneNo, 
+      guardianName, guardianPhoneNo 
+    } = newStudent;
+
+    if (!name || !birthday || !phoneNo || !guardianName || !guardianPhoneNo) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -75,7 +83,11 @@ const StudentRegistration = () => {
         address: "",
         school: "",
         currentGrade: "",
-        phoneNo: ""
+        phoneNo: "",
+        email: "",               // optional
+        guardianName: "",        // mandatory
+        guardianPhoneNo: "",     // mandatory
+        nicNumber: ""  
       });
       toast.success("Student registered successfully!");
     } catch (err) {
@@ -103,7 +115,11 @@ const StudentRegistration = () => {
       address: student.address,
       school: student.school,
       currentGrade: student.currentGrade,
-      phoneNo: student.phoneNo
+      phoneNo: student.phoneNo,
+      email: student.email || "",
+      guardianName: student.guardianName || "",
+      guardianPhoneNo: student.guardianPhoneNo || "",
+      nicNumber: student.nicNumber || ""
     });
   };
 
@@ -113,11 +129,15 @@ const StudentRegistration = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
 
-    const { name, birthday, phoneNo } = editData;
-    if (!name || !birthday || !phoneNo) {
-      toast.error("Please fill all required fields");
-      return;
-    }
+    const { 
+        name, birthday, phoneNo, 
+        guardianName, guardianPhoneNo 
+      } = editData;
+
+      if (!name || !birthday || !phoneNo || !guardianName || !guardianPhoneNo) {
+        toast.error("Please fill all required fields");
+        return;
+      }
 
     try {
       const token = localStorage.getItem("token");
@@ -158,7 +178,7 @@ const StudentRegistration = () => {
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Register New Student</h2>
 
       {/* Form */}
-      <form onSubmit={handleCreate} className="p-4 bg-white shadow-sm rounded border mb-5">
+      <form onSubmit={handleCreate} className="p-4 bg-body shadow-sm rounded border mb-5">
         <div className="row g-4">
           <div className="col-md-6">
             <label className="form-label fw-semibold">Student ID (auto-generated if blank)</label>
@@ -240,6 +260,56 @@ const StudentRegistration = () => {
               placeholder="Full address"
             />
           </div>
+          {/* New Fields */}
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Email Address</label>
+            <input
+              type="email"
+              name="email"
+              value={newStudent.email}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              placeholder="e.g. parent@example.com"
+            />
+          </div>
+
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Guardian's Name *</label>
+            <input
+              type="text"
+              name="guardianName"
+              value={newStudent.guardianName}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              placeholder="e.g. Jane Smith"
+              required
+            />
+          </div>
+
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Guardian Phone No *</label>
+            <input
+              type="text"
+              name="guardianPhoneNo"
+              value={newStudent.guardianPhoneNo}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              placeholder="e.g. 0771234567"
+              required
+            />
+          </div>
+
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">NIC Number</label>
+            <input
+              type="text"
+              name="nicNumber"
+              value={newStudent.nicNumber}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              placeholder="e.g. 901234567V"
+            />
+          </div>
 
           <div className="col-12 pt-2">
             <button type="submit" className="btn btn-success w-100 py-2 fs-5">
@@ -299,7 +369,7 @@ const StudentRegistration = () => {
       <h4 className="text-secondary mb-3">📋 Registered Students</h4>
       <div className="table-responsive shadow-sm rounded border">
         <table className="table table-hover align-middle mb-0">
-          <thead className="table-light">
+          <thead>
             <tr>
               <th>Student ID</th>
               <th>Name</th>

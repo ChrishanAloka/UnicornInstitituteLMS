@@ -95,7 +95,7 @@ const NotificationCenter = () => {
             notifications.map((notif, idx) => (
               <div
                 key={idx}
-                className={`mb-2 p-2 ${notif.read ? "bg-light" : "bg-white fw-bold"}`}
+                className={`mb-2 p-2 ${notif.read ? "bg-body" : "bg-body fw-bold"}`}
                 style={{ cursor: "pointer" }}
                 onClick={() => !notif.read && markAsRead(notif._id)}
               >

@@ -77,7 +77,7 @@ const AdminEmployeeRegister = () => {
     <div className="container py-4">
   <h3 className="mb-4 text-primary border-bottom pb-2">🧾 Register New Employee</h3>
 
-  <form onSubmit={handleSubmit} className="bg-white p-4 shadow rounded-3">
+  <form onSubmit={handleSubmit} className="bg-body p-4 shadow rounded-3">
     <div className="row g-4">
       {/* Auto-generated Employee ID (hidden) */}
       <input type="text" value={generatedId} readOnly hidden />

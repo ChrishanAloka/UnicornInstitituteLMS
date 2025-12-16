@@ -104,7 +104,7 @@ const TrackPayment = () => {
         <div className="alert alert-info">No courses match the selected filters.</div>
       ) : (
         courses.map((course) => (
-          <div key={`${course.courseName}-${course.courseType}`} className="mb-5 p-4 bg-white shadow-sm rounded border">
+          <div key={`${course.courseName}-${course.courseType}`} className="mb-5 p-4 bg-body shadow-sm rounded border">
             <div className="d-flex justify-content-between align-items-start mb-3">
               <div>
                 <h4 className="mb-1">{course.courseName}</h4>
@@ -127,7 +127,7 @@ const TrackPayment = () => {
             ) : (
               <div className="table-responsive">
                 <table className="table table-hover">
-                  <thead className="table-light">
+                  <thead>
                     <tr>
                       <th>Student ID</th>
                       <th>Student Name</th>

@@ -192,7 +192,7 @@ const CourseRegistration = () => {
     <div className="container py-4">
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Register Course</h2>
 
-      <form onSubmit={handleCreate} className="p-4 bg-white shadow-sm rounded border mb-5">
+      <form onSubmit={handleCreate} className="p-4 bg-body shadow-sm rounded border mb-5">
         <div className="row g-4">
           <div className="col-md-6">
             <label className="form-label fw-semibold">Course Name *</label>
@@ -487,7 +487,7 @@ const CourseRegistration = () => {
       <h4 className="text-secondary mb-3">Registered Courses</h4>
       <div className="table-responsive shadow-sm rounded border">
         <table className="table table-hover">
-          <thead className="table-light">
+          <thead>
             <tr>
               <th>Course</th>
               <th>Day</th>

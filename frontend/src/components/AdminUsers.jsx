@@ -152,7 +152,7 @@ const AdminUsers = () => {
     {/* User Table */}
     <div className="table-responsive">
       <table id="user-table" className="table table-hover table-bordered align-middle shadow-sm">
-        <thead className="table-light">
+        <thead>
           <tr className="text-center">
             <th>Name</th>
             <th>Email</th>
