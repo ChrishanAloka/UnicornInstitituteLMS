@@ -12,7 +12,7 @@ const CourseRegistration = () => {
     timeFrom: "",
     timeTo: "",
     description: "",
-    courseType: "weekly", // ✅ changed default to 'weekly' (more common for day-of-week)
+    courseType: "Monthly", // ✅ changed default to 'weekly' (more common for day-of-week)
     instructor: "",
     courseStartDate: "",   // ✅
     courseEndDate: "",     // ✅
@@ -89,7 +89,7 @@ const CourseRegistration = () => {
         timeFrom: "",
         timeTo: "",
         description: "",
-        courseType: "weekly",
+        courseType: "Monthly",
         instructor: "",
         courseStartDate: "",
         courseEndDate: "",
@@ -120,7 +120,7 @@ const CourseRegistration = () => {
       timeFrom: course.timeFrom,
       timeTo: course.timeTo,
       description: course.description || "",
-      courseType: course.courseType || "weekly",
+      courseType: course.courseType || "Monthly",
       instructor: course.instructor?._id || course.instructor || "",
       courseStartDate: formatDateForInput(course.courseStartDate) || "",
       courseEndDate: formatDateForInput(course.courseEndDate) || "",
@@ -254,9 +254,8 @@ const CourseRegistration = () => {
               onChange={handleChange}
               className="form-select"
             >
-              <option value="Weekly">Weekly</option>
+              {/* <option value="Monthly">Weekly</option> */}
               <option value="Monthly">Monthly</option>
-              <option value="3-Month">3 Month Course</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -401,9 +400,8 @@ const CourseRegistration = () => {
                       onChange={handleEditChange}
                       className="form-select"
                     >
-                      <option value="Weekly">Weekly</option>
+                      {/* <option value="Weekly">Weekly</option> */}
                       <option value="Monthly">Monthly</option>
-                      <option value="3-Month">3 Month Course</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
@@ -513,8 +511,10 @@ const CourseRegistration = () => {
                   <td>{formatDate(c.courseStartDate) || "-"}</td>
                   <td>{c.courseFees || "-"}</td>
                   <td className="text-center">
-                    <button className="btn btn-sm btn-primary me-2" onClick={() => openEditModal(c)}>Edit</button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c._id)}>Delete</button>
+                    <div className="mt-4 d-flex gap-2">
+                      <button className="btn btn-sm btn-primary me-2" onClick={() => openEditModal(c)}>Edit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c._id)}>Delete</button>
+                    </div>
                   </td>
                 </tr>
               ))

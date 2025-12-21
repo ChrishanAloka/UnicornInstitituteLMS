@@ -1,0 +1,39 @@
+.chip-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: none;
+}
+
+.chip-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.chip.active {
+  background: #000;
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.chip-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+.chip-scroll::-webkit-scrollbar {
+  display: none;
+}
