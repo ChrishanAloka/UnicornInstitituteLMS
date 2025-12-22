@@ -127,6 +127,21 @@ const StudentRegistration = () => {
   const handleChange = (e) =>
     setNewStudent({ ...newStudent, [e.target.name]: e.target.value });
 
+  // Converts "14/06/2002" → "2002-06-14"
+  const convertToISODate = (ddmmyyyy) => {
+    if (!ddmmyyyy) return '';
+    const parts = ddmmyyyy.split('/');
+    if (parts.length !== 3) return ''; // invalid format
+    const [day, month, year] = parts;
+    // Validate numbers
+    const d = parseInt(day, 10);
+    const m = parseInt(month, 10);
+    const y = parseInt(year, 10);
+    if (isNaN(d) || isNaN(m) || isNaN(y)) return '';
+    // Create ISO string (Mongoose can parse this)
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
 
@@ -140,6 +155,13 @@ const StudentRegistration = () => {
       return;
     }
 
+    // ✅ Validate and convert birthday
+    const isoBirthday = convertToISODate(birthday);
+    if (!isoBirthday) {
+      toast.error("Please enter a valid birthday in dd/mm/yyyy format");
+      return;
+    }
+
     // Auto-generate student ID only if not manually entered
     const studentId = newStudent.studentId || generateStudentId();
 
@@ -147,9 +169,17 @@ const StudentRegistration = () => {
 
     try {
       const token = localStorage.getItem("token");
+
+      // ✅ Send ISO date to backend
+      const payload = {
+        ...newStudent,
+        studentId,
+        birthday: isoBirthday // 🔄 converted here!
+      };
+
       const res = await axios.post(
         "https://unicorninstititutelms.onrender.com/api/auth/students/register",
-        { ...newStudent, studentId },
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -221,13 +251,26 @@ const StudentRegistration = () => {
       return;
     }
 
+    const isoBirthday = convertToISODate(birthday);
+    if (!isoBirthday) {
+      toast.error("Please enter a valid birthday in dd/mm/yyyy format");
+      return;
+    }
+
     setUpdating(true); // start loading
 
     try {
       const token = localStorage.getItem("token");
+
+      // ✅ Send ISO date to backend
+      const payload = {
+        ...editData,
+        birthday: isoBirthday // 🔄 converted here!
+      };
+      
       const res = await axios.put(
         `https://unicorninstititutelms.onrender.com/api/auth/students/${editingStudent}`,
-        editData,
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -235,9 +278,10 @@ const StudentRegistration = () => {
 
       setStudents(students.map((s) => (s._id === editingStudent ? res.data : s)));
       setEditingStudent(null);
+      setEditBirthdayMode('text');
       toast.success("Student updated successfully!");
     } catch (err) {
-      toast.error("Failed to update student");
+      toast.error(`Failed to update student: ${err.response?.message || err.message}`);
     } finally {
       setUpdating(false); // stop loading
     }
@@ -246,7 +290,7 @@ const StudentRegistration = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this student?")) return;
 
-    setDeleting(true); // start loading
+    setLoading(true); // start loading
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
@@ -258,7 +302,7 @@ const StudentRegistration = () => {
     } catch (err) {
       toast.error("Failed to delete student");
     } finally {
-      setDeleting(false); // stop loading
+      setLoading(false); // stop loading
     }
   };
 

@@ -205,19 +205,6 @@ const Attendance = () => {
                   placeholder="Type ID/name or scan QR"
                   autoFocus
                 />
-                <button
-                  className="btn btn-outline-primary"
-                  type="button"
-                  onClick={startScanner}
-                  disabled={isScanning}
-                >
-                  📷 Scan
-                </button>
-                <div className="col-md-2 d-flex align-items-end">
-                  <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-                    {loading ? "Searching..." : "🔍 Search"}
-                  </button>
-                </div>
                 {(input || student) && (
                   <button
                     className="btn btn-outline-secondary"
@@ -228,12 +215,27 @@ const Attendance = () => {
                   </button>
                 )}
               </div>
-              {loading && (
-                <div className="mt-2 text-muted">
-                  <span className="spinner-border spinner-border-sm"></span> Loading...
-                </div>
-              )}
             </div>
+            <div className="col-md-3 d-flex align-items-end">
+              <button
+                className="btn btn-outline-primary w-100"
+                type="button"
+                onClick={startScanner}
+                disabled={isScanning}
+              >
+                📷 Scan Qr
+              </button>
+            </div>
+            <div className="col-md-2 d-flex align-items-end">
+              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+                {loading ? "Searching..." : "🔍 Search"}
+              </button>
+            </div>
+            {loading && (
+              <div className="mt-2 text-muted">
+                <span className="spinner-border spinner-border-sm"></span> Loading...
+              </div>
+            )}
             <div className="col-md-3">
               <label className="form-label fw-semibold">Date</label>
               <input
