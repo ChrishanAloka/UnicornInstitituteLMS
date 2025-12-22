@@ -402,7 +402,7 @@ const StudentProfile = () => {
         <>
           <h4 className="mb-3 text-secondary">Enroll in Course</h4>
           {courses
-            .filter(c => !enrolledCourses.some(e => e.course._id === c._id))
+            .filter(c => !enrolledCourses.some(e => e.course?._id === c._id))
             .map(course => (
               <div className="card mb-3" key={course._id}>
                 <div className="card-body d-flex flex-wrap justify-content-between align-items-start">
