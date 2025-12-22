@@ -1,32 +1,67 @@
 // src/components/CourseRegistration.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CourseRegistration = () => {
   const [courses, setCourses] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [newCourse, setNewCourse] = useState({
     courseName: "",
-    dayOfWeek: "", // ✅ replaced courseDate
+    dayOfWeek: "",
     timeFrom: "",
     timeTo: "",
     description: "",
-    courseType: "Monthly", // ✅ changed default to 'weekly' (more common for day-of-week)
+    courseType: "Monthly",
     instructor: "",
-    courseStartDate: "",   // ✅
-    courseEndDate: "",     // ✅
-    courseFees: ""         // ✅
+    courseStartDate: "",
+    courseEndDate: "",
+    courseFees: ""
   });
   const [editingCourse, setEditingCourse] = useState(null);
   const [editData, setEditData] = useState({ ...newCourse });
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [sortColumn, setSortColumn] = useState("courseName");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterDay, setFilterDay] = useState(""); // e.g., "monday", "tuesday", etc.
+
+  // Columns for filtering & sorting
+  const columns = [
+    { label: "Course", key: "courseName" },
+    { label: "Day", key: "dayOfWeek" },
+    { label: "Time From", key: "timeFrom" },
+    { label: "Time To", key: "timeTo" },
+    { label: "Type", key: "courseType" },
+    { label: "Instructor", key: "instructorName" }, // derived
+    { label: "Start Date", key: "courseStartDate" },
+    { label: "Fees", key: "courseFees" },
+  ];
+
+  const filterRef = useRef(null);
 
   useEffect(() => {
     fetchCourses();
     fetchInstructors();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilter && filterRef.current && !filterRef.current.contains(event.target)) {
+        setShowFilter(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showFilter]);
+
   const fetchCourses = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/course", {
@@ -35,6 +70,8 @@ const CourseRegistration = () => {
       setCourses(res.data);
     } catch (err) {
       toast.error("Failed to load courses");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,13 +98,11 @@ const CourseRegistration = () => {
       return;
     }
 
-    // ✅ Conditional validation
     if (courseType === "other" && !courseStartDate) {
       toast.error("Course Start Date is required for 'Other' course type");
       return;
     }
 
-    // Prepare payload (convert empty strings to null/undefined if needed)
     const payload = { ...newCourse };
     if (!payload.courseStartDate) delete payload.courseStartDate;
     if (!payload.courseEndDate) delete payload.courseEndDate;
@@ -103,12 +138,10 @@ const CourseRegistration = () => {
   };
 
   const openEditModal = (course) => {
-    // Helper to format date from ISO to YYYY-MM-DD
     const formatDateForInput = (dateString) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        // Use UTC to avoid timezone shifting the day
-        return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
         .toISOString()
         .split("T")[0];
     };
@@ -180,13 +213,78 @@ const CourseRegistration = () => {
       .catch(() => toast.error("Delete failed"));
   };
 
-  // Helper: capitalize first letter
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "-";
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString();
+    return new Date(dateStr).toLocaleDateString("en-GB");
   };
+
+  // Derive instructorName for filtering
+  const enrichedCourses = courses.map(c => ({
+    ...c,
+    instructorName: c.instructor?.name || "-"
+  }));
+
+  const matchesSearch = (course) => {
+    if (!searchText) return true;
+    return columns.some(col => {
+      let value = course[col.key];
+      if (col.key === "courseFees" && value !== undefined) {
+        value = String(value);
+      }
+      return value && String(value).toLowerCase().includes(searchText.toLowerCase());
+    });
+  };
+
+  const WEEKDAY_ORDER = {
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+    sunday: 7
+  };
+
+  const processedCourses = enrichedCourses
+  .filter((course) => {
+    const matchesText = !searchText || columns.some(col => {
+      const val = course[col.key];
+      return val != null && String(val).toLowerCase().includes(searchText.toLowerCase());
+    });
+    const matchesDay = !filterDay || course.dayOfWeek === filterDay;
+    return matchesText && matchesDay;
+  })
+  .sort((a, b) => {
+    // Handle weekday sorting specially
+    if (sortColumn === "dayOfWeek") {
+      const aOrder = WEEKDAY_ORDER[a.dayOfWeek?.toLowerCase()] ?? 99;
+      const bOrder = WEEKDAY_ORDER[b.dayOfWeek?.toLowerCase()] ?? 99;
+      return sortDirection === "asc" ? aOrder - bOrder : bOrder - aOrder;
+    }
+
+    // Existing logic for other columns
+    let aVal = a[sortColumn] ?? "";
+    let bVal = b[sortColumn] ?? "";
+
+    if (sortColumn === "courseStartDate") {
+      return sortDirection === "asc"
+        ? new Date(aVal) - new Date(bVal)
+        : new Date(bVal) - new Date(aVal);
+    }
+
+    if (sortColumn === "courseFees") {
+      aVal = parseFloat(aVal) || 0;
+      bVal = parseFloat(bVal) || 0;
+      return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+    }
+
+    // Default: string comparison
+    return sortDirection === "asc"
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal));
+  });
 
   return (
     <div className="container py-4">
@@ -201,7 +299,7 @@ const CourseRegistration = () => {
               name="courseName"
               value={newCourse.courseName}
               onChange={handleChange}
-              className="form-control"
+              className="form-control shadow-sm"
               required
             />
           </div>
@@ -211,17 +309,13 @@ const CourseRegistration = () => {
               name="dayOfWeek"
               value={newCourse.dayOfWeek}
               onChange={handleChange}
-              className="form-select"
+              className="form-select shadow-sm"
               required
             >
               <option value="">-- Select Day --</option>
-              <option value="monday">Monday</option>
-              <option value="tuesday">Tuesday</option>
-              <option value="wednesday">Wednesday</option>
-              <option value="thursday">Thursday</option>
-              <option value="friday">Friday</option>
-              <option value="saturday">Saturday</option>
-              <option value="sunday">Sunday</option>
+              {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map(day => (
+                <option key={day} value={day}>{capitalize(day)}</option>
+              ))}
             </select>
           </div>
           <div className="col-md-6">
@@ -231,7 +325,7 @@ const CourseRegistration = () => {
               name="timeFrom"
               value={newCourse.timeFrom}
               onChange={handleChange}
-              className="form-control"
+              className="form-control shadow-sm"
               required
             />
           </div>
@@ -242,7 +336,7 @@ const CourseRegistration = () => {
               name="timeTo"
               value={newCourse.timeTo}
               onChange={handleChange}
-              className="form-control"
+              className="form-control shadow-sm"
               required
             />
           </div>
@@ -252,9 +346,8 @@ const CourseRegistration = () => {
               name="courseType"
               value={newCourse.courseType}
               onChange={handleChange}
-              className="form-select"
+              className="form-select shadow-sm"
             >
-              {/* <option value="Monthly">Weekly</option> */}
               <option value="Monthly">Monthly</option>
               <option value="other">Other</option>
             </select>
@@ -265,7 +358,7 @@ const CourseRegistration = () => {
               name="instructor"
               value={newCourse.instructor}
               onChange={handleChange}
-              className="form-select"
+              className="form-select shadow-sm"
             >
               <option value="">-- Select --</option>
               {instructors.map(ins => (
@@ -273,31 +366,17 @@ const CourseRegistration = () => {
               ))}
             </select>
           </div>
-          {/* {newCourse.courseType === "other" && (
-            <> */}
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Course Start Date *</label>
-                <input
-                  type="date"
-                  name="courseStartDate"
-                  value={newCourse.courseStartDate}
-                  onChange={handleChange}
-                  className="form-control"
-                  required
-                />
-              </div>
-              {/* <div className="col-md-6">
-                <label className="form-label fw-semibold">Course End Date (Optional)</label>
-                <input
-                  type="date"
-                  name="courseEndDate"
-                  value={newCourse.courseEndDate}
-                  onChange={handleChange}
-                  className="form-control"
-                />
-              </div> */}
-            {/* </>
-          )} */}
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Course Start Date *</label>
+            <input
+              type="date"
+              name="courseStartDate"
+              value={newCourse.courseStartDate}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              required
+            />
+          </div>
           <div className="col-md-6">
             <label className="form-label fw-semibold">Course Fees (Optional)</label>
             <input
@@ -305,7 +384,7 @@ const CourseRegistration = () => {
               name="courseFees"
               value={newCourse.courseFees}
               onChange={handleChange}
-              className="form-control"
+              className="form-control shadow-sm"
               min="0"
               step="0.01"
               placeholder="e.g. 150.50"
@@ -317,7 +396,7 @@ const CourseRegistration = () => {
               name="description"
               value={newCourse.description}
               onChange={handleChange}
-              className="form-control"
+              className="form-control shadow-sm"
               rows="3"
             />
           </div>
@@ -333,124 +412,116 @@ const CourseRegistration = () => {
       {editingCourse && (
         <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog">
-            <div className="modal-content">
+            <div className="modal-content border-0 shadow-lg">
               <div className="modal-header bg-primary text-white">
-                <h5>Edit Course</h5>
-                <button className="btn-close btn-close-white" onClick={() => setEditingCourse(null)} />
+                <h5 className="modal-title">✏️ Edit Course</h5>
+                <button
+                  className="btn-close btn-close-white"
+                  onClick={() => setEditingCourse(null)}
+                />
               </div>
               <div className="modal-body">
                 <form onSubmit={handleUpdate}>
                   <div className="mb-3">
-                    <label className="form-label">Course Name *</label>
+                    <label className="form-label fw-semibold">Course Name *</label>
                     <input
                       type="text"
                       name="courseName"
                       value={editData.courseName}
                       onChange={handleEditChange}
-                      className="form-control"
+                      className="form-control shadow-sm"
                       required
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Day of Week *</label>
+                    <label className="form-label fw-semibold">Day of Week *</label>
                     <select
                       name="dayOfWeek"
                       value={editData.dayOfWeek}
                       onChange={handleEditChange}
-                      className="form-select"
+                      className="form-select shadow-sm"
                       required
                     >
                       <option value="">-- Select Day --</option>
-                      <option value="monday">Monday</option>
-                      <option value="tuesday">Tuesday</option>
-                      <option value="wednesday">Wednesday</option>
-                      <option value="thursday">Thursday</option>
-                      <option value="friday">Friday</option>
-                      <option value="saturday">Saturday</option>
-                      <option value="sunday">Sunday</option>
+                      {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map(day => (
+                        <option key={day} value={day}>{capitalize(day)}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Time From *</label>
+                    <label className="form-label fw-semibold">Time From *</label>
                     <input
                       type="time"
                       name="timeFrom"
                       value={editData.timeFrom}
                       onChange={handleEditChange}
-                      className="form-control"
+                      className="form-control shadow-sm"
                       required
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Time To *</label>
+                    <label className="form-label fw-semibold">Time To *</label>
                     <input
                       type="time"
                       name="timeTo"
                       value={editData.timeTo}
                       onChange={handleEditChange}
-                      className="form-control"
+                      className="form-control shadow-sm"
                       required
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Course Type</label>
+                    <label className="form-label fw-semibold">Course Type</label>
                     <select
                       name="courseType"
                       value={editData.courseType}
                       onChange={handleEditChange}
-                      className="form-select"
+                      className="form-select shadow-sm"
                     >
-                      {/* <option value="Weekly">Weekly</option> */}
                       <option value="Monthly">Monthly</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
-                  {/* {editData.courseType === "other" && (
-                    <> */}
-                      <div className="mb-3">
-                        <label className="form-label">Course Start Date *</label>
-                        <input
-                          type="date"
-                          name="courseStartDate"
-                          value={editData.courseStartDate}
-                          onChange={handleEditChange}
-                          className="form-control"
-                          required
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Course End Date (Optional)</label>
-                        <input
-                          type="date"
-                          name="courseEndDate"
-                          value={editData.courseEndDate}
-                          onChange={handleEditChange}
-                          className="form-control"
-                        />
-                      </div>
-                    {/* </>
-                  )} */}
-                  
-                  <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Course Start Date</label>
+                    <input
+                      type="date"
+                      name="courseStartDate"
+                      value={editData.courseStartDate}
+                      onChange={handleEditChange}
+                      className="form-control shadow-sm"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Course End Date (Optional)</label>
+                    <input
+                      type="date"
+                      name="courseEndDate"
+                      value={editData.courseEndDate}
+                      onChange={handleEditChange}
+                      className="form-control shadow-sm"
+                    />
+                  </div>
+                  <div className="mb-3">
                     <label className="form-label fw-semibold">Course Fees (Optional)</label>
                     <input
                       type="number"
                       name="courseFees"
                       value={editData.courseFees}
                       onChange={handleEditChange}
-                      className="form-control"
+                      className="form-control shadow-sm"
                       min="0"
                       step="0.01"
                       placeholder="e.g. 150.50"
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Instructor</label>
+                    <label className="form-label fw-semibold">Instructor</label>
                     <select
                       name="instructor"
                       value={editData.instructor}
                       onChange={handleEditChange}
-                      className="form-select"
+                      className="form-select shadow-sm"
                     >
                       <option value="">-- Select --</option>
                       {instructors.map(ins => (
@@ -459,20 +530,26 @@ const CourseRegistration = () => {
                     </select>
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Description</label>
+                    <label className="form-label fw-semibold">Description</label>
                     <textarea
                       name="description"
                       value={editData.description}
                       onChange={handleEditChange}
-                      className="form-control"
+                      className="form-control shadow-sm"
                       rows="2"
                     />
                   </div>
-                  <div className="d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-secondary" onClick={() => setEditingCourse(null)}>
+                  <div className="d-flex justify-content-end gap-2 mt-4">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={() => setEditingCourse(null)}
+                    >
                       Cancel
                     </button>
-                    <button type="submit" className="btn btn-success">Save Changes</button>
+                    <button type="submit" className="btn btn-success">
+                      💾 Save Changes
+                    </button>
                   </div>
                 </form>
               </div>
@@ -481,46 +558,142 @@ const CourseRegistration = () => {
         </div>
       )}
 
-      {/* Courses Table */}
-      <h4 className="text-secondary mb-3">Registered Courses</h4>
-      <div className="table-responsive shadow-sm rounded border">
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th>Course</th>
-              <th>Day</th>
-              <th>Time</th>
-              <th>Type</th>
-              <th>Instructor</th>
-              <th>Start Date</th>
-              <th>Course Fees</th>
-              <th className="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {courses.length === 0 ? (
-              <tr><td colSpan="8" className="text-center text-muted">No courses</td></tr>
-            ) : (
-              courses.map(c => (
-                <tr key={c._id}>
-                  <td>{c.courseName}</td>
-                  <td>{capitalize(c.dayOfWeek)}</td>
-                  <td>{c.timeFrom} – {c.timeTo}</td>
-                  <td>{capitalize(c.courseType)}</td>
-                  <td>{c.instructor?.name || "-"}</td>
-                  <td>{formatDate(c.courseStartDate) || "-"}</td>
-                  <td>{c.courseFees || "-"}</td>
-                  <td className="text-center">
-                    <div className="mt-4 d-flex gap-2">
-                      <button className="btn btn-sm btn-primary me-2" onClick={() => openEditModal(c)}>Edit</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c._id)}>Delete</button>
-                    </div>
-                  </td>
+      {/* Filter & Table */}
+      <div className="container py-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h4 className="text-secondary mb-0">📋 Registered Courses</h4>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => setShowFilter((prev) => !prev)}
+          >
+            <i className="bi bi-funnel"></i>
+          </button>
+        </div>
+
+        {showFilter && (
+          <div ref={filterRef} className="sticky-top bg-body border-bottom p-3 mb-3 shadow-sm rounded border" style={{ zIndex: 20 }}>
+            <div className="row g-2 align-items-end">
+              <div className="col-12 col-md-4">
+                <label className="form-label fw-semibold mb-1">Search</label>
+                <input
+                  type="search"
+                  className="form-control shadow-sm"
+                  placeholder="Search anything..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </div>
+              <div className="col-6 col-md-4">
+                <label className="form-label fw-semibold mb-1">Sort by</label>
+                <select
+                  className="form-select shadow-sm"
+                  value={sortColumn}
+                  onChange={(e) => setSortColumn(e.target.value)}
+                >
+                  {columns.map((col) => (
+                    <option key={col.key} value={col.key}>
+                      {col.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-6 col-md-3">
+                <label className="form-label fw-semibold mb-1">Day of Week</label>
+                <select
+                  className="form-select shadow-sm"
+                  value={filterDay}
+                  onChange={(e) => setFilterDay(e.target.value)}
+                >
+                  <option value="">All Days</option>
+                  <option value="monday">Monday</option>
+                  <option value="tuesday">Tuesday</option>
+                  <option value="wednesday">Wednesday</option>
+                  <option value="thursday">Thursday</option>
+                  <option value="friday">Friday</option>
+                  <option value="saturday">Saturday</option>
+                  <option value="sunday">Sunday</option>
+                </select>
+              </div>
+              <div className="col-6 col-md-4">
+                <label className="form-label fw-semibold mb-1">Order</label>
+                <select
+                  className="form-select shadow-sm"
+                  value={sortDirection}
+                  onChange={(e) => setSortDirection(e.target.value)}
+                >
+                  <option value="asc">A → Z</option>
+                  <option value="desc">Z → A</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-2 text-muted small">
+              Showing <strong>{processedCourses.length}</strong> courses
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-2 text-muted">Loading courses...</p>
+          </div>
+        ) : (
+          <div className="table-responsive shadow-sm rounded border">
+            <table className="table table-hover align-middle text-center mb-0">
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Day</th>
+                  <th>Time</th>
+                  <th>Type</th>
+                  <th>Instructor</th>
+                  <th>Start Date</th>
+                  <th>Fees</th>
+                  <th className="text-center">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {processedCourses.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="text-center text-muted py-4">
+                      No courses found
+                    </td>
+                  </tr>
+                ) : (
+                  processedCourses.map((c) => (
+                    <tr key={c._id}>
+                      <td className="align-middle">{c.courseName}</td>
+                      <td className="align-middle">{capitalize(c.dayOfWeek)}</td>
+                      <td className="align-middle">{c.timeFrom} – {c.timeTo}</td>
+                      <td className="align-middle">{capitalize(c.courseType)}</td>
+                      <td className="align-middle">{c.instructorName}</td>
+                      <td className="align-middle">{formatDate(c.courseStartDate)}</td>
+                      <td className="align-middle">{c.courseFees ? `Rs. ${c.courseFees}` : "—"}</td>
+                      <td className="align-middle">
+                        <div className="d-flex flex-column gap-2">
+                          <button
+                            className="btn btn-sm btn-primary d-flex align-items-center justify-content-center"
+                            onClick={() => openEditModal(c)}
+                          >
+                            <i className="bi bi-pencil-square me-1"></i> Edit
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger d-flex align-items-center justify-content-center"
+                            onClick={() => handleDelete(c._id)}
+                          >
+                            <i className="bi bi-trash me-1"></i> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <ToastContainer />
