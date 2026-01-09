@@ -5,15 +5,12 @@ const Payment = require('../models/Payment');
 // @desc    Search student by ID or name + check attendance for a date
 // @route   GET /api/auth/student/search?q=...&date=YYYY-MM-DD
 // @access  Private
+
 exports.searchStudent = async (req, res) => {
   try {
     const { q, date: dateParam } = req.query;
 
-    if (!q) {
-      return res.status(400).json({ error: 'Search query "q" is required' });
-    }
-
-    // Parse and validate date
+    // Parse date safely
     let searchDate;
     if (dateParam) {
       searchDate = new Date(dateParam);
@@ -24,52 +21,95 @@ exports.searchStudent = async (req, res) => {
       searchDate = new Date();
     }
 
-    // Create start/end of day in UTC (or local time — see note below)
+    // Use LOCAL start/end of day (consistent with frontend date picker)
     const startOfDay = new Date(searchDate);
-    startOfDay.setUTCHours(0, 0, 0, 0); // or setHours(0, 0, 0, 0) for local time
+    startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date(searchDate);
-    endOfDay.setUTCHours(23, 59, 59, 999); // or setHours(23, 59, 59, 999)
+    endOfDay.setHours(23, 59, 59, 999);
 
-    // Find student
-    const student = await Student.findOne({
-      $or: [
-        { studentId: { $regex: new RegExp(`^${q}$`, 'i') } },
-        { name: { $regex: q, $options: 'i' } }
-      ]
-    }).populate('enrolledCourses.course', 'courseName dayOfWeek timeFrom timeTo');
+    // Get day of week as string: 'monday', 'tuesday', etc.
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const targetDay = days[searchDate.getDay()].toLowerCase();
 
-    if (!student) {
-      return res.status(404).json({ error: 'Student not found' });
+    // === CASE 1: Search by student ID or name ===
+    if (q) {
+      const student = await Student.findOne({
+        $or: [
+          { studentId: { $regex: `^${q}$`, $options: 'i' } },
+          { name: { $regex: q, $options: 'i' } }
+        ]
+      }).populate('enrolledCourses.course', 'dayOfWeek'); // Only need dayOfWeek
+
+      if (!student) {
+        return res.status(404).json({ error: 'Student not found' });
+      }
+
+      // Get attendance records for this student on the selected date
+      const attendanceRecords = await Attendance.find({
+        studentId: student.studentId,
+        date: { $gte: startOfDay, $lt: endOfDay }
+      }).select('course');
+
+      const markedCourseIds = new Set(
+        attendanceRecords.map(record => record.course.toString())
+      );
+
+      // Attach isMarked flag and filter only courses on targetDay
+      const relevantEnrollments = student.enrolledCourses
+        .filter(enroll => {
+          return enroll.course && 
+                 enroll.course.dayOfWeek?.toLowerCase() === targetDay;
+        })
+        .map(enroll => ({
+          ...enroll.toObject(),
+          isMarked: markedCourseIds.has(enroll.course._id.toString())
+        }));
+
+      const response = student.toObject();
+      response.enrolledCourses = relevantEnrollments;
+
+      return res.json(response);
     }
 
-    // ✅ FIXED: Use startOfDay and endOfDay in query
-    const attendanceRecords = await Attendance.find({
-      studentId: student.studentId,
-      date: {
-        $gte: startOfDay,
-        $lt: endOfDay
-      }
-    }).select('course');
+    // === CASE 2: No query → return ALL students with a course on targetDay ===
 
-    const markedCourseIds = new Set(
-      attendanceRecords.map(record => record.course.toString())
+    // Step 1: Find all students who have at least one enrolled course
+    // where the course's dayOfWeek matches targetDay
+    const allStudents = await Student.find()
+      .populate('enrolledCourses.course', 'dayOfWeek')
+      .lean();
+
+    // Step 2: Pre-fetch all attendance for the day (for all students)
+    const allAttendance = await Attendance.find({
+      date: { $gte: startOfDay, $lt: endOfDay }
+    }).select('studentId course');
+
+    const attendanceKeySet = new Set(
+      allAttendance.map(a => `${a.studentId}-${a.course}`)
     );
 
-    const enrolledWithStatus = student.enrolledCourses.map(enroll => {
-      if (!enroll.course) {
-        return { ...enroll.toObject(), isMarked: false };
-      }
-      return {
-        ...enroll.toObject(),
-        isMarked: markedCourseIds.has(enroll.course._id.toString())
-      };
-    });
+    // Step 3: Filter students & enrich with isMarked
+    const matchingStudents = allStudents
+      .map(student => {
+        const relevantEnrollments = student.enrolledCourses
+          .filter(enroll => {
+            return enroll.course && 
+                   enroll.course.dayOfWeek?.toLowerCase() === targetDay;
+          })
+          .map(enroll => ({
+            ...enroll,
+            isMarked: attendanceKeySet.has(`${student.studentId}-${enroll.course._id}`)
+          }));
 
-    const studentResponse = student.toObject();
-    studentResponse.enrolledCourses = enrolledWithStatus;
+        return {
+          ...student,
+          enrolledCourses: relevantEnrollments
+        };
+      })
+      .filter(student => student.enrolledCourses.length > 0);
 
-    res.json(studentResponse);
+    res.json(matchingStudents);
   } catch (error) {
     console.error('Student search error:', error);
     res.status(500).json({ error: 'Server error during student search' });
