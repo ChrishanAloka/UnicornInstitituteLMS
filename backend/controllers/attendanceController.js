@@ -45,37 +45,42 @@ exports.getStudentWithCourses = async (req, res) => {
 
 exports.markAttendance = async (req, res) => {
   try {
-    const { studentId, courseId, date, status } = req.body;
+    const { studentId, courseId, date, status = 'present' } = req.body;
 
-    // 🔍 Step 1: Find student by custom studentId to get MongoDB _id
-    const studentDoc = await Student.findOne({ studentId });
-    if (!studentDoc) {
+    if (!studentId || !courseId || !date) {
+      return res.status(400).json({ error: 'Missing required fields: studentId, courseId, date' });
+    }
+
+    // Find student to get their MongoDB _id
+    const student = await Student.findOne({ studentId });
+    if (!student) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    // 🔍 Step 2: Check if already marked for this date/course
-    const existing = await Attendance.findOne({ 
-      student: studentDoc._id, 
-      courseId, 
-      date 
-    });
-    if (existing) {
-      return res.status(400).json({ error: 'Attendance already marked' });
-    }
+    // Normalize date to start of day (to avoid time mismatches)
+    const attendanceDate = new Date(date);
+    attendanceDate.setHours(0, 0, 0, 0);
 
-    // ✅ Step 3: Create attendance with BOTH IDs
-    const record = new Attendance({
-      studentId: studentId,        // e.g., "ID2026"
-      student: studentDoc._id,     // MongoDB ObjectId
-      course: courseId,
-      date: new Date(date),
-      status
-    });
+    // Upsert using ONLY schema-defined fields
+    const attendance = await Attendance.findOneAndUpdate(
+      {
+        studentId: studentId,
+        course: courseId,        // ← match by 'course' (ObjectId)
+        date: attendanceDate
+      },
+      {
+        studentId: studentId,    // string ID (for easy lookup)
+        student: student._id,    // ObjectId reference
+        course: courseId,        // ObjectId reference
+        date: attendanceDate,
+        status: status.toLowerCase()
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
 
-    await record.save();
-    res.json({ success: true, message: 'Attendance marked' });
+    res.status(200).json(attendance);
   } catch (error) {
-    console.error('Attendance error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Mark attendance error:', error);
+    res.status(500).json({ error: 'Failed to mark attendance' });
   }
 };

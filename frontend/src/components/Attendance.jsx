@@ -3,125 +3,107 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import { Html5Qrcode } from "html5-qrcode";
-
+import "react-toastify/dist/ReactToastify.css";
 
 const Attendance = () => {
   const [input, setInput] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [student, setStudent] = useState(null);
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [students, setStudents] = useState([]); // Array of students (or single in array)
   const [loading, setLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
 
   const html5QrCodeRef = useRef(null);
   const isScannerActive = useRef(false);
 
-  // Initialize date to today
+  // Set today as default date
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     setSelectedDate(today);
   }, []);
 
-  // Auto-search student when input changes (3+ chars)
-  // useEffect(() => {
-  //   if (input.trim().length >= 3 && selectedDate) {
-  //     fetchStudent();
-  //   } else {
-  //     resetState();
-  //   }
-  // }, [input, selectedDate]);
+  // Auto-fetch when input or date changes
+  useEffect(() => {
+    if (!selectedDate) return;
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!input.trim()) {
-      toast.warn("Please enter a student ID or name");
-      return;
+    const trimmed = input.trim();
+    if (trimmed.length === 0 || trimmed.length >= 3) {
+      fetchStudents();
+    } else {
+      setStudents([]);
     }
-    fetchStudent();
-  };
+  }, [input, selectedDate]);
 
   // Cleanup scanner on unmount
   useEffect(() => {
     return () => {
       if (isScannerActive.current && html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().then(() => {
-          html5QrCodeRef.current.clear().catch(() => {});
-        }).catch(() => {});
+        html5QrCodeRef.current
+          .stop()
+          .then(() => html5QrCodeRef.current?.clear())
+          .catch(() => {});
       }
     };
   }, []);
 
-  // ✅ RESET STATE
-  const resetState = () => {
-    setStudent(null);
-    setEnrolledCourses([]);
-    setLoading(false);
-  };
-
-  // ✅ FETCH STUDENT WITH ATTENDANCE STATUS FOR SELECTED DATE
-  const fetchStudent = async () => {
+  const fetchStudents = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/search?q=${encodeURIComponent(input.trim())}&date=${selectedDate}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data) {
-        setStudent(res.data);
-        setEnrolledCourses(res.data.enrolledCourses || []);
-      } else {
-        resetState();
+      if (!token) {
+        toast.error("Authentication required");
+        setStudents([]);
+        return;
       }
+
+      let url = `https://unicorninstititutelms.onrender.com/api/auth/students/search?date=${selectedDate}`;
+      if (input.trim()) {
+        url += `&q=${encodeURIComponent(input.trim())}`;
+      }
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Backend returns array (even for single student wrapped in array)
+      const data = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
+      setStudents(data);
     } catch (err) {
-      resetState();
-      toast.error("Student not found");
+      console.error("Fetch error:", err);
+      setStudents([]);
+      const msg = err.response?.data?.error || "Failed to load students";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ MARK ATTENDANCE
-  const handleMarkAttendance = async (courseId) => {
-    if (!student || !selectedDate) return;
+  const handleMarkAttendance = async (studentId, courseId, status = 'present') => {
+    if (!studentId || !courseId || !selectedDate) return;
+
     try {
       const token = localStorage.getItem("token");
       await axios.post(
         "https://unicorninstititutelms.onrender.com/api/auth/attendance/mark",
         {
-          studentId: student.studentId,
-          courseId: courseId,
+          studentId,
+          courseId,
           date: selectedDate,
-          status: "present"
+          status, // 'present' or 'absent'
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(`Attendance marked for ${formatDateDisplay(selectedDate)}!`);
-      // ✅ Refetch to update "Marked" status
-      fetchStudent();
+      toast.success(`Attendance marked as ${status}!`);
+      fetchStudents(); // Refresh list
     } catch (err) {
       toast.error("Failed to mark attendance");
     }
   };
 
-  // ✅ HANDLE DATE CHANGE
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-    // resetState() is called via useEffect on [input, selectedDate]
-  };
-
-  // ✅ HANDLE INPUT CLEAR
-  const handleInputClear = () => {
-    setInput("");
-    resetState();
-  };
-
-  // ✅ QR SCANNER
   const startScanner = async () => {
     if (isScanning || isScannerActive.current) return;
 
     setIsScanning(true);
-    resetState();
+    setStudents([]);
 
     try {
       const qrCode = new Html5Qrcode("qr-reader");
@@ -129,222 +111,271 @@ const Attendance = () => {
       isScannerActive.current = true;
 
       await qrCode.start(
-        { facingMode: "environment" }, // back camera
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
-        },
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           setInput(decodedText.trim());
           stopScanner();
         }
       );
     } catch (err) {
-      console.error(err);
-      toast.error("Camera access failed. Use HTTPS & allow permission.");
+      console.error("QR Scan error:", err);
+      toast.error("Camera access failed. Use HTTPS and allow permission.");
       stopScanner();
     }
   };
 
-
   const stopScanner = async () => {
-    if (!html5QrCodeRef.current) {
-      setIsScanning(false);
-      return;
+    if (html5QrCodeRef.current) {
+      try {
+        await html5QrCodeRef.current.stop();
+        await html5QrCodeRef.current.clear();
+      } catch (e) {
+        /* ignore */
+      }
+      html5QrCodeRef.current = null;
     }
-
-    try {
-      await html5QrCodeRef.current.stop();
-      await html5QrCodeRef.current.clear();
-    } catch (e) {}
-
-    html5QrCodeRef.current = null;
     isScannerActive.current = false;
     setIsScanning(false);
   };
 
+  const handleInputClear = () => {
+    setInput("");
+    setStudents([]);
+  };
 
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString();
+    return new Date(dateStr).toLocaleDateString("en-GB"); // dd/mm/yyyy
   };
 
-  // ✅ Helper: Get day of week from selected date
   const getDayOfWeek = (dateStr) => {
-    if (!dateStr) return null;
-    const date = new Date(dateStr);
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    return days[date.getUTCDay()]; // or .getDay() for local time
+    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    return days[new Date(dateStr).getDay()];
   };
 
-  // ✅ Compute target day
-  const targetDay = getDayOfWeek(selectedDate);
-
-  // ✅ Filter courses to only those matching the day
-  const relevantCourses = enrolledCourses.filter(enroll => {
-    const courseDay = enroll.course?.dayOfWeek?.toLowerCase();
-    return courseDay === targetDay;
-  });
+  const targetDay = selectedDate ? getDayOfWeek(selectedDate) : null;
 
   return (
     <div className="container py-4">
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Attendance</h2>
 
-      <form onSubmit={handleSearch} className="mb-5 p-4 bg-body shadow-sm rounded border">
-        {/* Input + Date + Scan */}
-        <div className="mb-5 p-4 bg-body shadow-sm rounded border">
-          <div className="row g-3">
-            <div className="col-md-7">
-              <label className="form-label fw-semibold">Student ID or Name</label>
-              <div className="input-group gap-2">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type ID/name or scan QR"
-                  autoFocus
-                />
-                {(input || student) && (
-                  <button
-                    className="btn btn-outline-secondary"
-                    type="button"
-                    onClick={handleInputClear}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="col-md-3 d-flex align-items-end">
-              <button
-                className="btn btn-outline-primary w-100"
-                type="button"
-                onClick={startScanner}
-                disabled={isScanning}
-              >
-                📷 Scan Qr
-              </button>
-            </div>
-            <div className="col-md-2 d-flex align-items-end">
-              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-                {loading ? "Searching..." : "🔍 Search"}
-              </button>
-            </div>
-            {loading && (
-              <div className="mt-2 text-muted">
-                <span className="spinner-border spinner-border-sm"></span> Loading...
-              </div>
-            )}
-            <div className="col-md-3">
-              <label className="form-label fw-semibold">Date</label>
+      {/* Search Form */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          fetchStudents();
+        }}
+        className="mb-5 p-4 bg-body shadow-sm rounded border"
+      >
+        <div className="row g-3">
+          {/* Student Input */}
+          <div className="col-md-7">
+            <label className="form-label fw-semibold">Student ID or Name (optional)</label>
+            <div className="input-group">
               <input
-                type="date"
-                max={new Date().toISOString().split("T")[0]}
+                type="text"
                 className="form-control"
-                value={selectedDate}
-                onChange={handleDateChange}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Leave blank to show all students for the selected date"
+                autoFocus
               />
-            </div>
-            <div className="col-md-2">
-              <div className="w-100 text-center p-2 bg-body rounded">
-                <small className="text-muted">
-                  Selected: {formatDateDisplay(selectedDate)}
-                </small>
-              </div>
-              <div className="w-100 text-center p-2 bg-body rounded">
-                <small className="text-muted">
-                  Today: {new Date().toISOString().split("T")[0]}
-                </small>
-              </div>
+              {(input || students.length > 0) && (
+                <button
+                  className="btn btn-outline-secondary"
+                  type="button"
+                  onClick={handleInputClear}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
 
-          {/* QR Reader (always in DOM) */}
-          <div
-            id="qr-reader"
-            style={{
-              width: "100%",
-              height: isScanning ? "300px" : "0",
-              overflow: "hidden",
-              marginTop: isScanning ? "1rem" : "0",
-              transition: "height 0.3s"
-            }}
-          ></div>
-
-          {isScanning && (
+          {/* Scan Button */}
+          <div className="col-md-3 d-flex align-items-end">
             <button
-              className="btn btn-secondary mt-2"
-              onClick={stopScanner}
+              className="btn btn-outline-primary w-100"
+              type="button"
+              onClick={startScanner}
+              disabled={isScanning}
             >
-              Cancel Scan
+              📷 Scan QR
             </button>
-          )}
+          </div>
+
+          {/* Search Button */}
+          <div className="col-md-2 d-flex align-items-end">
+            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+              {loading ? "Searching..." : "🔍 Search"}
+            </button>
+          </div>
+
+          {/* Date Picker */}
+          <div className="col-md-3">
+            <label className="form-label fw-semibold">Date</label>
+            <input
+              type="date"
+              max={new Date().toISOString().split("T")[0]}
+              className="form-control"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+          </div>
+
+          {/* Date Info */}
+          <div className="col-md-2 d-flex align-items-end">
+            <div className="w-100 text-center p-2  rounded">
+              <small className="text-muted">
+                Selected: {selectedDate ? formatDateDisplay(selectedDate) : "—"}
+              </small>
+            </div>
+          </div>
         </div>
+
+        {/* QR Scanner Container */}
+        <div
+          id="qr-reader"
+          style={{
+            width: "100%",
+            height: isScanning ? "300px" : "0",
+            overflow: "hidden",
+            marginTop: isScanning ? "1rem" : "0",
+            transition: "height 0.3s",
+          }}
+        ></div>
+
+        {isScanning && (
+          <button
+            className="btn btn-secondary mt-2"
+            type="button"
+            onClick={stopScanner}
+          >
+            Cancel Scan
+          </button>
+        )}
+
+        {loading && (
+          <div className="mt-2 text-muted">
+            <span className="spinner-border spinner-border-sm"></span> Loading...
+          </div>
+        )}
       </form>
 
-      {/* Student & Courses */}
-      {student && !isScanning && (
-        <>
-          <div className="mb-4 p-4 bg-body shadow-sm rounded border">
-            <h4 className="mb-2">✅ {student.name}</h4>
-            <p className="text-muted mb-1">
-              <strong>ID:</strong> {student.studentId} • <strong>Grade:</strong> {student.currentGrade || "—"}
-            </p>
-          </div>
+      {/* Results */}
+      {students.length > 0 && !isScanning && (
+        <div className="mt-4">
+          {/* Group students by course */}
+          {(() => {
+            // Build a map: courseId → { courseInfo, students[] }
+            const courseMap = new Map();
 
-          <h4 className="mb-3 text-secondary">
-            Enrolled Courses — Attendance for {formatDateDisplay(selectedDate)}
-          </h4>
+            students.forEach(student => {
+              student.enrolledCourses.forEach(enroll => {
+                const courseId = enroll.course._id.toString();
+                if (!courseMap.has(courseId)) {
+                  courseMap.set(courseId, {
+                    course: enroll.course,
+                    students: []
+                  });
+                }
 
-          {relevantCourses.length === 0 ? (
-            <div className="alert alert-info">
-              No courses scheduled for {formatDateDisplay(selectedDate)} ({targetDay}).
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead>
-                  <tr>
-                    <th>Course</th>
-                    <th>Time</th>
-                    <th>Enrollment Period</th>
-                    <th className="text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {relevantCourses.map(enroll => (
-                    <tr key={enroll._id}>
-                      <td><strong>{enroll.course?.courseName || "—"}</strong></td>
-                      <td>
-                        {enroll.course?.timeFrom}–{enroll.course?.timeTo}
-                      </td>
-                      <td>
-                        {formatDateDisplay(enroll.startDate)} → {formatDateDisplay(enroll.endDate)}
-                      </td>
-                      <td className="text-center">
-                        {enroll.isMarked ? (
-                          <span className="badge bg-success">✅ Marked</span>
-                        ) : (
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => handleMarkAttendance(enroll.course._id)}
-                            disabled={!enroll.course?._id}
-                          >
-                            ➕ Mark Present
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
+                courseMap.get(courseId).students.push({
+                  ...student,
+                  enrollment: enroll // carry enrollment info (status, dates, etc.)
+                });
+              });
+            });
+
+            // Convert to array and sort (optional: by course name)
+            const groupedCourses = Array.from(courseMap.values())
+              .sort((a, b) =>
+                a.course.courseName.localeCompare(b.course.courseName)
+              );
+
+            return groupedCourses.map(({ course, students }) => (
+              <div key={course._id} className="mb-5">
+                {/* Course Header */}
+                <div className="p-3 bg-primary text-white rounded-top">
+                  <h4 className="mb-1">{course.courseName}</h4>
+                  <div>
+                    <span className="me-3">📅 {getDayOfWeek(selectedDate).charAt(0).toUpperCase() + getDayOfWeek(selectedDate).slice(1)}</span>
+                    <span>⏰ {course.timeFrom} – {course.timeTo}</span>
+                  </div>
+                </div>
+
+                {/* Students Table */}
+                <div className="table-responsive border rounded-bottom">
+                  <table className="table table-hover align-middle mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Grade</th>
+                        <th>Enrollment Period</th>
+                        <th className="text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {students.map(({ _id, studentId, name, currentGrade, enrollment }) => (
+                        <tr key={_id}>
+                          <td><strong>{studentId}</strong></td>
+                          <td>{name}</td>
+                          <td>{currentGrade || "—"}</td>
+                          <td>
+                            {formatDateDisplay(enrollment.startDate)} →{" "}
+                            {enrollment.endDate ? formatDateDisplay(enrollment.endDate) : "Ongoing"}
+                          </td>
+                          <td className="text-center">
+                            {enrollment.isMarked ? (
+                              <span className={`badge ${enrollment.status === 'absent' ? 'bg-danger' : 'bg-success'}`}>
+                                {enrollment.status === 'absent' ? '❌ Absent' : '✅ Present'}
+                              </span>
+                            ) : (
+                              <div className="d-flex gap-2 justify-content-center">
+                                <button
+                                  className="btn btn-sm btn-success"
+                                  onClick={() => handleMarkAttendance(studentId, course._id, 'present')}
+                                  title="Mark Present"
+                                >
+                                  ✅ Present
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => handleMarkAttendance(studentId, course._id, 'absent')}
+                                  title="Mark Absent"
+                                >
+                                  ❌ Absent
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
       )}
 
-      <ToastContainer />
+      {!loading && students.length === 0 && input.trim().length > 0 && (
+        <div className="alert alert-warning mt-4">
+          No student found matching "{input}"
+        </div>
+      )}
+
+      {!loading && students.length === 0 && input.trim().length === 0 && selectedDate && (
+        <div className="alert alert-info mt-4">
+          No students have active weekly courses scheduled on{" "}
+          {formatDateDisplay(selectedDate)} ({targetDay}).
+        </div>
+      )}
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
