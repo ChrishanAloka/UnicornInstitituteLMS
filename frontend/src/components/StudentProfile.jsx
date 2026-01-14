@@ -18,7 +18,8 @@ const StudentProfile = () => {
     courseId: "",
     amount: "",
     method: "Cash",
-    notes: ""
+    notes: "",
+    paymentDate: new Date().toISOString().split('T')[0] // default to today (YYYY-MM-DD)
   });
   // For enrollment: track open date fields per course
   const [dateInputs, setDateInputs] = useState({}); // { courseId: { startDate, endDate } }
@@ -206,7 +207,8 @@ const StudentProfile = () => {
           courseId,
           amount: Number(amount),
           method,
-          notes: notes || undefined
+          notes: notes || undefined,
+          paymentDate: newPayment.paymentDate
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -608,6 +610,16 @@ const StudentProfile = () => {
                   </div>
                   <div className="modal-body">
                     <form onSubmit={handleRecordPayment}>
+                      <div className="mb-3">
+                        <label className="form-label">Payment Date *</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={newPayment.paymentDate}
+                          onChange={(e) => setNewPayment({ ...newPayment, paymentDate: e.target.value })}
+                          required
+                        />
+                      </div>
                       <div className="mb-3">
                         <label className="form-label">Course</label>
                         <input

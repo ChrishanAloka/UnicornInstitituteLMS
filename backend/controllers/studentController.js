@@ -362,14 +362,15 @@ exports.getStudentPayments = async (req, res) => {
 // POST /api/auth/payments
 exports.createPayment = async (req, res) => {
   try {
-    const { studentId, courseId, amount, method, notes } = req.body;
+    const { studentId, courseId, amount, method, notes, paymentDate } = req.body;
 
     const payment = new Payment({
       student: studentId,
       course: courseId,
       amount,
       method,
-      notes
+      notes,
+      paymentDate: paymentDate ? new Date(paymentDate) : Date.now()
     });
 
     await payment.save();
