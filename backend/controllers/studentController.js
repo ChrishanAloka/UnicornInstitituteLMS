@@ -413,7 +413,7 @@ exports.getRecentStudents = async (req, res) => {
     // Parse and fallback to defaults
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-
+    console.log("page", page, "limit", limit);
     // Ensure positive integers
     if (page < 1) page = 1;
     if (limit < 1) limit = 10;
