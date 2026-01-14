@@ -39,6 +39,10 @@ const StudentRegistration = () => {
   const [sortDirection, setSortDirection] = useState("asc"); // asc | desc
   const [showFilter, setShowFilter] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+
 
   // Generate unique student ID (you can also let backend generate it)
   const generateStudentId = () => {
@@ -50,7 +54,7 @@ const StudentRegistration = () => {
 
   // Load students on mount
   useEffect(() => {
-    fetchStudents();
+    fetchStudents(1);
   }, []);
 
   // Optional: Add this in a useEffect or global stylesheet
@@ -67,18 +71,26 @@ const StudentRegistration = () => {
     return () => document.head.removeChild(style);
   }, []);
 
-  const fetchStudents = async () => {
-    setLoading(true); // start loading
+  const fetchStudents = async (page = 1) => {
+    setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/students/registered", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setStudents(res.data);
+      const res = await axios.get(
+        "https://unicorninstititutelms.onrender.com/api/auth/students",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { page, limit: 10 }
+        }
+      );
+      setStudents(res.data.students || []);
+      setTotalPages(res.data.totalPages || 1);
+      setCurrentPage(page);
     } catch (err) {
       toast.error("Failed to load students");
+      setStudents([]);
+      setTotalPages(1);
     } finally {
-      setLoading(false); // stop loading
+      setLoading(false);
     }
   };
 
@@ -200,6 +212,7 @@ const StudentRegistration = () => {
         nicNumber: ""  
       });
       toast.success("Student registered successfully!");
+      fetchStudents(currentPage);
     } catch (err) {
       const errorMessage = err.response?.data?.error || "Failed to register student";
       toast.error(errorMessage);
@@ -1074,6 +1087,57 @@ const StudentRegistration = () => {
             </table>
 
           </div>
+        )}
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <nav className="mt-4">
+            <ul className="pagination justify-content-center">
+              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => fetchStudents(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+              </li>
+
+              {/* Optional: Show page numbers (only if totalPages <= 10) */}
+              {totalPages <= 10 ? (
+                [...Array(totalPages)].map((_, i) => (
+                  <li
+                    key={i + 1}
+                    className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => fetchStudents(i + 1)}
+                    >
+                      {i + 1}
+                    </button>
+                  </li>
+                ))
+              ) : (
+                // Or just show current page
+                <li className="page-item active">
+                  <span className="page-link">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                </li>
+              )}
+
+              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => fetchStudents(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
         )}
       </div>
       <ToastContainer />
