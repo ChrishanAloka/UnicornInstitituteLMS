@@ -76,7 +76,7 @@ const StudentRegistration = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "https://unicorninstititutelms.onrender.com/api/auth/students",
+        "https://unicorninstititutelms.onrender.com/api/auth/students/registered",
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { page, limit: 10 }
