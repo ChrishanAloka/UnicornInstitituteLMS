@@ -36,9 +36,9 @@ const StudentProfile = () => {
   const [selectedStudentId, setSelectedStudentId] = useState(null); // Optional: highlight selected
   
 
-  useEffect(() => {
-    fetchAllCourses();
-  }, []);
+  // useEffect(() => {
+  //   fetchAllCourses();
+  // }, []);
 
   // Auto-load student if studentId is in URL (e.g. from "Profile" button)
   useEffect(() => {
