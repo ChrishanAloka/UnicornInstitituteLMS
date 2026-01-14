@@ -359,3 +359,32 @@ exports.getAttendanceTracking = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// In your course controller
+exports.getStudentsByCourse = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const students = await Student.find({ "enrolledCourses.course": courseId })
+      .populate("enrolledCourses.course", "courseName")
+      .select("name studentId enrolledCourses");
+
+    // Flatten to include enrollment ID and dates
+    const result = students.map(student => {
+      const enrollment = student.enrolledCourses.find(e => 
+        String(e.course?._id || e.course) === String(courseId)
+      );
+      return {
+        _id: student._id,
+        name: student.name,
+        studentId: student.studentId,
+        enrollmentId: enrollment?._id,
+        startDate: enrollment?.startDate,
+        endDate: enrollment?.endDate
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch students" });
+  }
+};

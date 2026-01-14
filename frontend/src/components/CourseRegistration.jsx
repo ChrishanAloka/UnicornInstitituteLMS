@@ -35,6 +35,12 @@ const CourseRegistration = () => {
   const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
   const [enrollmentDates, setEnrollmentDates] = useState({ startDate: "", endDate: "" });
 
+  const [showUnenrollModal, setShowUnenrollModal] = useState(false);
+  const [selectedCourseForUnenroll, setSelectedCourseForUnenroll] = useState(null); // { _id, courseName }
+  const [enrolledStudents, setEnrolledStudents] = useState([]);
+  const [loadingEnrolled, setLoadingEnrolled] = useState(false);
+  const [selectedUnenrollStudentIds, setSelectedUnenrollStudentIds] = useState(new Set());
+
   // Columns for filtering & sorting
   const columns = [
     { label: "Course", key: "courseName" },
@@ -81,6 +87,26 @@ const CourseRegistration = () => {
       setAllStudents([]);
     } finally {
       setLoadingStudents(false);
+    }
+  };
+
+  const fetchEnrolledStudents = async (courseId) => {
+    setLoadingEnrolled(true);
+    try {
+      const token = localStorage.getItem("token");
+      // Assuming your backend has an endpoint like: GET /api/auth/course/:id/students
+      const res = await axios.get(
+        `https://unicorninstititutelms.onrender.com/api/auth/course/${courseId}/students`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Expected response: array of student objects with enrollment info
+      setEnrolledStudents(res.data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load enrolled students");
+      setEnrolledStudents([]);
+    } finally {
+      setLoadingEnrolled(false);
     }
   };
 
@@ -273,6 +299,51 @@ const CourseRegistration = () => {
 
     setShowEnrollModal(false);
     // Optionally refresh course list or student data
+  };
+
+  const handleBulkUnenroll = async () => {
+    if (selectedUnenrollStudentIds.size === 0) return;
+
+    const token = localStorage.getItem("token");
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Map studentId → enrollmentId (needed for your delete endpoint)
+    const studentToEnrollmentMap = {};
+    enrolledStudents.forEach(s => {
+      if (selectedUnenrollStudentIds.has(s._id)) {
+        studentToEnrollmentMap[s._id] = s.enrollmentId;
+      }
+    });
+
+    // Confirm before unenrolling
+    if (!window.confirm(`Are you sure you want to unenroll ${selectedUnenrollStudentIds.size} student(s)?`)) {
+      return;
+    }
+
+    for (const studentId of selectedUnenrollStudentIds) {
+      const enrollmentId = studentToEnrollmentMap[studentId];
+      if (!enrollmentId) continue;
+
+      try {
+        await axios.delete(
+          `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/unenroll/${enrollmentId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to unenroll student ${studentId}:`, err);
+        errorCount++;
+      }
+    }
+
+    toast.success(`${successCount} student(s) unenrolled!`);
+    if (errorCount > 0) {
+      toast.error(`${errorCount} unenrollment(s) failed.`);
+    }
+
+    // Refresh the list
+    await fetchEnrolledStudents(selectedCourseForUnenroll._id);
   };
 
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "-";
@@ -748,6 +819,17 @@ const CourseRegistration = () => {
                             <i className="bi bi-person-plus me-1"></i> Enroll
                           </button>
                           <button
+                            className="btn btn-sm btn-warning d-flex align-items-center justify-content-center"
+                            onClick={async () => {
+                              setSelectedCourseForUnenroll({ _id: c._id, courseName: c.courseName });
+                              setSelectedUnenrollStudentIds(new Set());
+                              await fetchEnrolledStudents(c._id);
+                              setShowUnenrollModal(true);
+                            }}
+                          >
+                            <i className="bi bi-people me-1"></i> Manage
+                          </button>
+                          <button
                             className="btn btn-sm btn-primary d-flex align-items-center justify-content-center"
                             onClick={() => openEditModal(c)}
                           >
@@ -768,6 +850,7 @@ const CourseRegistration = () => {
             </table>
           </div>
         )}
+
         {/* Enroll Students Modal */}
         {showEnrollModal && (
           <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
@@ -851,6 +934,85 @@ const CourseRegistration = () => {
                     onClick={handleBulkEnroll}
                   >
                     Enroll {selectedStudentIds.size} Student(s)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Unenroll / Manage Enrollments Modal */}
+        {showUnenrollModal && (
+          <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header bg-warning text-dark">
+                  <h5>Enrolled Students – "{selectedCourseForUnenroll?.courseName}"</h5>
+                  <button
+                    className="btn-close"
+                    onClick={() => setShowUnenrollModal(false)}
+                  />
+                </div>
+                <div className="modal-body">
+                  {loadingEnrolled ? (
+                    <p>Loading enrolled students...</p>
+                  ) : enrolledStudents.length === 0 ? (
+                    <p className="text-muted">No students enrolled in this course.</p>
+                  ) : (
+                    <>
+                      <p>Select students to unenroll:</p>
+                      <div className="list-group" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                        {enrolledStudents.map((student) => (
+                          <div key={student._id} className="list-group-item d-flex align-items-center">
+                            <input
+                              type="checkbox"
+                              className="form-check-input me-2"
+                              id={`unenroll-${student._id}`}
+                              checked={selectedUnenrollStudentIds.has(student._id)}
+                              onChange={(e) => {
+                                const newSet = new Set(selectedUnenrollStudentIds);
+                                if (e.target.checked) {
+                                  newSet.add(student._id);
+                                } else {
+                                  newSet.delete(student._id);
+                                }
+                                setSelectedUnenrollStudentIds(newSet);
+                              }}
+                            />
+                            <label className="form-check-label flex-grow-1" htmlFor={`unenroll-${student._id}`}>
+                              <strong>{student.name}</strong> ({student.studentId})
+                              {student.startDate && (
+                                <span className="text-muted ms-2">
+                                  From: {new Date(student.startDate).toLocaleDateString()}
+                                </span>
+                              )}
+                              {student.endDate && (
+                                <span className="text-muted ms-2">
+                                  To: {new Date(student.endDate).toLocaleDateString()}
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowUnenrollModal(false)}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    disabled={selectedUnenrollStudentIds.size === 0}
+                    onClick={handleBulkUnenroll}
+                  >
+                    Unenroll {selectedUnenrollStudentIds.size} Student(s)
                   </button>
                 </div>
               </div>
