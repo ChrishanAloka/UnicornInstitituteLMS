@@ -368,6 +368,8 @@ const StudentProfile = () => {
                   onClick={() => {
                     setSearchTerm("");
                     setStudent(null);
+                    setSelectedStudentId(null);
+                    fetchRecentStudents(1); // 👈 Re-show recent students
                   }}
                 >
                   ✕

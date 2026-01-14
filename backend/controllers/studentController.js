@@ -407,22 +407,35 @@ exports.updateEnrollmentDates = async (req, res) => {
   }
 };
 
-// In your student controller
+// controllers/studentController.js
 exports.getRecentStudents = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  try {
+    // Parse and fallback to defaults
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
-  const students = await Student.find()
-    .sort({ updatedAt: -1 }) // most recently updated first
-    .select("name studentId updatedAt") // only needed fields
-    .limit(limit)
-    .skip((page - 1) * limit);
+    // Ensure positive integers
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 10;
+    if (limit > 100) limit = 100; // prevent abuse
 
-  const total = await Student.countDocuments();
+    const skip = (page - 1) * limit;
 
-  res.json({
-    students,
-    totalPages: Math.ceil(total / limit),
-    currentPage: page
-  });
+    const total = await Student.countDocuments();
+    const students = await Student.find()
+      .sort({ updatedAt: -1 })
+      .select("name studentId updatedAt") // only needed fields
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      students,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total
+    });
+  } catch (err) {
+    console.error("Error in getRecentStudents:", err); // 👈 Critical for debugging
+    res.status(500).json({ error: "Failed to fetch recent students" });
+  }
 };
