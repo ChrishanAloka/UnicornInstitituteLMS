@@ -264,6 +264,8 @@ router.get('/students/:studentId/payments', authMiddleware(["admin", "user"]), s
 router.post('/students/payments', authMiddleware(["admin", "user"]), studentController.createPayment);
 router.put('/students/:studentId/enrollments/:enrollmentId', authMiddleware(["admin", "user"]), studentController.updateEnrollmentDates);
 router.get('/students/:id', authMiddleware(["admin", "user"]), studentController.getStudentById);
+router.get('/students/recent', authMiddleware(["admin", "user"]), studentController.getRecentStudents);
+
 
 // Instructors
 router.post('/instructor/register', authMiddleware(["admin", "user"]), instructorController.registerInstructor);

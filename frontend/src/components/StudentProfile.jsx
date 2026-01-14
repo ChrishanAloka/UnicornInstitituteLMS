@@ -29,6 +29,11 @@ const StudentProfile = () => {
   const isScannerActive = useRef(false);
   const [isScanning, setIsScanning] = useState(false);
   const [searchParams] = useSearchParams();
+
+  const [recentStudents, setRecentStudents] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedStudentId, setSelectedStudentId] = useState(null); // Optional: highlight selected
   
 
   useEffect(() => {
@@ -39,11 +44,11 @@ const StudentProfile = () => {
   useEffect(() => {
     const studentId = searchParams.get("studentId");
     if (studentId) {
+      // Load specific student from URL
       (async () => {
         setLoading(true);
         try {
           const token = localStorage.getItem("token");
-          // ✅ Now using /students/:id endpoint
           const res = await axios.get(
             `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}`,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -51,7 +56,7 @@ const StudentProfile = () => {
           setStudent(res.data);
           setEnrolledCourses(res.data.enrolledCourses || []);
           fetchPayments(res.data._id);
-          setSearchTerm(""); // clear manual search
+          setSearchTerm("");
         } catch (err) {
           toast.error("Failed to load student profile");
           setStudent(null);
@@ -60,8 +65,36 @@ const StudentProfile = () => {
           setLoading(false);
         }
       })();
+    } else {
+      // No student pre-selected → show recent students
+      fetchRecentStudents(1);
     }
   }, [searchParams]);
+
+  const fetchRecentStudents = async (page = 1) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `https://unicorninstititutelms.onrender.com/api/auth/students/recent`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { page, limit: 10 }
+        }
+      );
+
+      setRecentStudents(res.data.students || []);
+      setTotalPages(res.data.totalPages || 1);
+      setCurrentPage(page);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load recent students");
+      setRecentStudents([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchAllCourses = async () => {
     try {
@@ -380,6 +413,95 @@ const StudentProfile = () => {
           </button>
         )}
       </form>
+
+      {/* Recent Students List */}
+      {!student && !loading && (
+        <div className="mb-5">
+          <h4 className="mb-3 text-secondary">Recent Students</h4>
+          {recentStudents.length === 0 ? (
+            <p className="text-muted">No students found.</p>
+          ) : (
+            <>
+              <div className="row g-3">
+                {recentStudents.map((s) => (
+                  <div className="col-md-6 col-lg-4" key={s._id}>
+                    <div
+                      className={`p-3 border rounded shadow-sm cursor-pointer ${
+                        selectedStudentId === s._id ? "border-primary bg-light" : "bg-body"
+                      }`}
+                      onClick={() => {
+                        setSelectedStudentId(s._id);
+                        // Simulate loading this student
+                        (async () => {
+                          setLoading(true);
+                          try {
+                            const token = localStorage.getItem("token");
+                            const res = await axios.get(
+                              `https://unicorninstititutelms.onrender.com/api/auth/students/${s._id}`,
+                              { headers: { Authorization: `Bearer ${token}` } }
+                            );
+                            setStudent(res.data);
+                            setEnrolledCourses(res.data.enrolledCourses || []);
+                            fetchPayments(res.data._id);
+                          } catch (err) {
+                            toast.error("Failed to load student");
+                          } finally {
+                            setLoading(false);
+                          }
+                        })();
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <h6 className="mb-1">{s.name}</h6>
+                      <p className="text-muted small mb-1">ID: {s.studentId}</p>
+                      <p className="text-muted small mb-0">
+                        Updated: {new Date(s.updatedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <nav className="mt-3">
+                  <ul className="pagination justify-content-center">
+                    <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                      <button
+                        className="page-link"
+                        onClick={() => fetchRecentStudents(currentPage - 1)}
+                      >
+                        Previous
+                      </button>
+                    </li>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <li
+                        key={i + 1}
+                        className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
+                      >
+                        <button
+                          className="page-link"
+                          onClick={() => fetchRecentStudents(i + 1)}
+                        >
+                          {i + 1}
+                        </button>
+                      </li>
+                    ))}
+                    <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                      <button
+                        className="page-link"
+                        onClick={() => fetchRecentStudents(currentPage + 1)}
+                      >
+                        Next
+                      </button>
+                    </li>
+                  </ul>
+                </nav>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {student && (
         <div className="mb-5 p-4 bg-body shadow-sm rounded border">

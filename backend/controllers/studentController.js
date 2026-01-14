@@ -406,3 +406,23 @@ exports.updateEnrollmentDates = async (req, res) => {
     res.status(500).json({ error: 'Failed to update enrollment dates' });
   }
 };
+
+// In your student controller
+exports.getRecentStudents = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const students = await Student.find()
+    .sort({ updatedAt: -1 }) // most recently updated first
+    .select("name studentId updatedAt") // only needed fields
+    .limit(limit)
+    .skip((page - 1) * limit);
+
+  const total = await Student.countDocuments();
+
+  res.json({
+    students,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page
+  });
+};
