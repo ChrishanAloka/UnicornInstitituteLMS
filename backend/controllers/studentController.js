@@ -257,6 +257,30 @@ exports.getStudents = async (req, res) => {
   }
 };
 
+exports.getAllRegisterdStudents = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Student.countDocuments();
+    const students = await Student.find()
+      .select('name studentId birthday phoneNo email school currentGrade createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      students,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch students' });
+  }
+};
+
 // @desc    Update a student
 // @route   PUT /api/auth/student/:id
 // @access  Private
@@ -412,11 +436,11 @@ exports.getRecentStudents = async (req, res) => {
   try {
     // Parse and fallback to defaults
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 12;
     console.log("page", page, "limit", limit);
     // Ensure positive integers
     if (page < 1) page = 1;
-    if (limit < 1) limit = 10;
+    if (limit < 1) limit = 12;
     if (limit > 100) limit = 100; // prevent abuse
 
     const skip = (page - 1) * limit;

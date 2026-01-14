@@ -254,6 +254,7 @@ router.get('/activityitemsmarkprogress/', authMiddleware(["admin", "user"]), Act
 // All routes are protected
 router.post('/students/register', authMiddleware(["admin", "user"]), studentController.registerStudent);
 router.get('/students/', authMiddleware(["admin", "user"]), studentController.getStudents);
+router.get('/students/registered/', authMiddleware(["admin", "user"]), studentController.getAllRegisterdStudents);
 router.put('/students/:id', authMiddleware(["admin", "user"]), studentController.updateStudent);
 router.delete('/students/:id', authMiddleware(["admin", "user"]), studentController.deleteStudent);
 router.get('/students/search', authMiddleware(["admin", "user"]), studentController.searchStudent);

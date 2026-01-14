@@ -71,7 +71,7 @@ const StudentRegistration = () => {
     setLoading(true); // start loading
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/students", {
+      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/students/registered", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStudents(res.data);
@@ -330,7 +330,7 @@ const StudentRegistration = () => {
               onChange={handleChange}
               className="form-control shadow-sm"
               placeholder="Leave blank for auto ID"
-              disabled={!!newStudent.studentId}
+              // disabled={!!newStudent.studentId}
             />
           </div>
           <div className="col-md-6">

@@ -36,9 +36,9 @@ const StudentProfile = () => {
   const [selectedStudentId, setSelectedStudentId] = useState(null); // Optional: highlight selected
   
 
-  // useEffect(() => {
-  //   fetchAllCourses();
-  // }, []);
+  useEffect(() => {
+    fetchAllCourses();
+  }, []);
 
   // Auto-load student if studentId is in URL (e.g. from "Profile" button)
   useEffect(() => {
@@ -79,7 +79,7 @@ const StudentProfile = () => {
         `https://unicorninstititutelms.onrender.com/api/auth/students/recent`,
         {
           headers: { Authorization: `Bearer ${token}` },
-          params: { page, limit: 10 }
+          params: { page, limit: 12 }
         }
       );
 
