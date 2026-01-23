@@ -3,15 +3,37 @@ const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
 const Course = require('../models/Course');
+const RescheduledSession = require('../models/RescheduledSession');
+
 // @desc    Search student by ID or name + check attendance for a date
 // @route   GET /api/auth/student/search?q=...&date=YYYY-MM-DD
 // @access  Private
 
+// Helper to format date as YYYY-MM-DD
+const formatDateDisplay = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().split('T')[0];
+};
+
+// Helper: Check if enrollment is active on a given date
+const isActiveEnrollment = (enroll, checkDate) => {
+  if (!enroll) return false;
+  
+  // If no startDate, assume active from beginning of time
+  const start = enroll.startDate ? new Date(enroll.startDate) : new Date(0);
+  const end = enroll.endDate ? new Date(enroll.endDate) : null;
+  
+  const check = new Date(checkDate);
+  return start <= check && (!end || check <= end);
+};
+
+// Main search handler
 exports.searchStudent = async (req, res) => {
   try {
     const { q, date: dateParam } = req.query;
 
-    // Parse search date
+    // Parse and validate date
     let searchDate;
     if (dateParam) {
       searchDate = new Date(dateParam);
@@ -22,76 +44,99 @@ exports.searchStudent = async (req, res) => {
       searchDate = new Date();
     }
 
-    // Normalize to local start/end of day
+    // Normalize to start/end of day (local time)
     const startOfDay = new Date(searchDate);
     startOfDay.setHours(0, 0, 0, 0);
-
     const endOfDay = new Date(searchDate);
     endOfDay.setHours(23, 59, 59, 999);
 
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const targetDay = days[searchDate.getDay()].toLowerCase();
 
-    // Helper: Check if enrollment is active on searchDate
-    const isActiveEnrollment = (enroll, checkDate) => {
-      if (!enroll.startDate) return false;
-      const start = new Date(enroll.startDate);
-      const end = enroll.endDate ? new Date(enroll.endDate) : null;
-      return start <= checkDate && (!end || checkDate <= end);
-    };
+    // ─── STEP 1: Is this an ORIGINAL date that was MOVED AWAY? ───
+    const movedAwaySession = await RescheduledSession.findOne({
+      originalDate: { $gte: startOfDay, $lt: endOfDay }
+    }).populate('course', 'courseName');
 
-    // Helper: Check if a course occurs on the searchDate
-    const doesCourseOccurOnDate = (course, checkDate) => {
-      return course.dayOfWeek?.toLowerCase() === targetDay;
-      // if (course.courseType === 'weekly') {
-      //   return course.dayOfWeek?.toLowerCase() === targetDay;
-      // } else {
-      //   // Non-weekly: assume single session on courseStartDate
-      //   if (!course.courseStartDate) return false;
-      //   const sessionDate = new Date(course.courseStartDate);
-      //   sessionDate.setHours(0, 0, 0, 0);
-      //   const checkDateNormalized = new Date(checkDate);
-      //   checkDateNormalized.setHours(0, 0, 0, 0);
-      //   return sessionDate.getTime() === checkDateNormalized.getTime();
-      // }
-    };
+    if (movedAwaySession) {
+      return res.json({
+        type: 'MOVED_AWAY',
+        message: `The session for "${movedAwaySession.course.courseName}" on ${formatDateDisplay(searchDate)} has been rescheduled.`,
+        newDate: movedAwaySession.newDate,
+        courseName: movedAwaySession.course.courseName
+      });
+    }
 
-    if (q) {
-      // 🔍 Single student mode
-      const student = await Student.findOne({
-        $or: [
-          { studentId: { $regex: new RegExp(`^${q}$`, 'i') } },
-          { name: { $regex: q, $options: 'i' } }
+    // ─── STEP 2: Gather ALL course IDs active on this date ───
+    const courseIdsSet = new Set();
+
+    // A. Regular weekly courses on this weekday
+    const regularCourses = await Course.find({
+      $expr: {
+        $eq: [
+          { $toLower: { $trim: { input: "$dayOfWeek" } } },
+          targetDay // already lowercase, e.g., "tuesday"
         ]
-      }).populate('enrolledCourses.course', 
-        'courseName dayOfWeek timeFrom timeTo courseType courseStartDate'
-      );
+      }
+    }).select('_id');
+    regularCourses.forEach(c => courseIdsSet.add(c._id.toString()));
 
-      if (!student) {
+    // B. Single-session courses (non-weekly) on this exact date
+    const singleSessionCourses = await Course.find({
+      courseStartDate: { $gte: startOfDay, $lt: endOfDay }
+    }).select('_id');
+    singleSessionCourses.forEach(c => courseIdsSet.add(c._id.toString()));
+
+    // C. Courses RESCHEDULED TO this date
+    const rescheduledSessions = await RescheduledSession.find({
+      newDate: { $gte: startOfDay, $lt: endOfDay }
+    }).select('course');
+    rescheduledSessions.forEach(s => courseIdsSet.add(s.course.toString()));
+
+    const courseIds = Array.from(courseIdsSet);
+
+    // If no courses scheduled at all
+    if (courseIds.length === 0) {
+      if (q) {
         return res.status(404).json({ error: 'Student not found' });
       }
+      return res.json({ type: 'NORMAL', students: [] });
+    }
 
-      // Filter enrollments: active + course occurs on searchDate
-      const relevantEnrollments = student.enrolledCourses.filter(enroll =>
-        enroll.course &&
-        isActiveEnrollment(enroll, searchDate) &&
-        doesCourseOccurOnDate(enroll.course, searchDate)
-      );
+    // ─── STEP 3: Fetch students enrolled in ANY of these courses ───
+    const allStudents = await Student.find({
+      'enrolledCourses.course': { $in: courseIds.map(id => id) }
+    }).populate('enrolledCourses.course', 'courseName dayOfWeek timeFrom timeTo courseType courseStartDate');
 
-      // Fetch attendance for this student on this date
-      const attendanceRecords = await Attendance.find({
-        studentId: student.studentId,
-        date: { $gte: startOfDay, $lt: endOfDay }
-      }).select('course status'); // ← include 'status'
+    // ─── STEP 4: Fetch attendance records for this date ───
+    const allAttendance = await Attendance.find({
+      date: { $gte: startOfDay, $lt: endOfDay }
+    }).select('studentId course status');
 
-      const attendanceStatusMap = new Map();
-      attendanceRecords.forEach(record => {
-        attendanceStatusMap.set(record.course.toString(), record.status || 'present');
-      });
+    const attendanceMap = new Map();
+    allAttendance.forEach(record => {
+      const key = `${record.studentId}-${record.course}`;
+      attendanceMap.set(key, record.status || 'present');
+    });
 
-      const enrichedEnrollments = relevantEnrollments.map(enroll => {
-        const courseIdStr = enroll.course._id.toString();
-        const status = attendanceStatusMap.get(courseIdStr);
+    // ─── STEP 5: Filter & enrich relevant enrollments ───
+    const resultStudents = [];
+
+    for (const student of allStudents) {
+      if (!Array.isArray(student.enrolledCourses)) continue;
+
+      const relevantEnrollments = student.enrolledCourses
+      .filter(enroll => {
+        if (!enroll?.course?._id) return false;
+        const isTargetCourse = courseIds.includes(enroll.course._id.toString());
+        if (!isTargetCourse) return false;
+
+        // ✅ Enforce enrollment was active ON THE SELECTED DATE
+        return isActiveEnrollment(enroll, searchDate);
+      })
+      .map(enroll => {
+        const key = `${student.studentId}-${enroll.course._id}`;
+        const status = attendanceMap.get(key);
         return {
           ...enroll.toObject(),
           isMarked: !!status,
@@ -99,83 +144,89 @@ exports.searchStudent = async (req, res) => {
         };
       });
 
-      const response = student.toObject();
-      response.enrolledCourses = enrichedEnrollments;
-      return res.json(response);
-    }
-
-    // 📋 Bulk mode: get all courses that occur on searchDate (any type)
-    const allCoursesOnDate = await Course.find({
-      $or: [
-        {
-          dayOfWeek: { $regex: new RegExp(`^${targetDay}$`, 'i') }
-        },
-        {
-          
-          courseStartDate: {
-            $gte: startOfDay,
-            $lt: endOfDay
-          }
-        }
-      ]
-    }).select('_id courseType courseStartDate dayOfWeek');
-
-    if (allCoursesOnDate.length === 0) {
-      return res.json([]);
-    }
-
-    const courseIds = allCoursesOnDate.map(c => c._id);
-
-    // Find students enrolled in these courses
-    const allStudents = await Student.find({
-      'enrolledCourses.course': { $in: courseIds }
-    })
-      .populate('enrolledCourses.course', 
-        'courseName dayOfWeek timeFrom timeTo courseType courseStartDate'
-      )
-      .lean();
-
-    // Pre-fetch all attendance for the day (include status)
-    const allAttendance = await Attendance.find({
-      date: { $gte: startOfDay, $lt: endOfDay }
-    }).select('studentId course status');
-
-    const attendanceStatusMap = new Map();
-    allAttendance.forEach(record => {
-      const key = `${record.studentId}-${record.course}`;
-      attendanceStatusMap.set(key, record.status || 'present');
-    });
-
-    const resultStudents = [];
-
-    for (const student of allStudents) {
-      const relevantEnrollments = student.enrolledCourses
-        .filter(enroll => {
-          return (
-            enroll.course &&
-            isActiveEnrollment(enroll, searchDate) &&
-            doesCourseOccurOnDate(enroll.course, searchDate)
-          );
-        })
-        .map(enroll => {
-          const key = `${student.studentId}-${enroll.course._id}`;
-          const status = attendanceStatusMap.get(key);
-          return {
-            ...enroll,
-            isMarked: !!status,
-            status: status || null
-          };
-        });
-
       if (relevantEnrollments.length > 0) {
         resultStudents.push({
-          ...student,
+          ...student.toObject(),
           enrolledCourses: relevantEnrollments
         });
       }
     }
 
-    res.json(resultStudents);
+    // ─── STEP 6: Handle single-student search (q) ───
+    if (q) {
+      const matchedStudent = resultStudents.find(s =>
+        s.studentId?.toString().toLowerCase() === q.toLowerCase() ||
+        s.name?.toLowerCase().includes(q.toLowerCase())
+      );
+
+      if (!matchedStudent) {
+        return res.status(404).json({ error: 'No active course for this student on selected date' });
+      }
+
+      return res.json(matchedStudent); // backward-compatible response
+    }
+
+    // ─── STEP 7: Determine response type for frontend banner ───
+    let responseType = 'NORMAL';
+    let originalSessions = [];
+
+    if (rescheduledSessions.length > 0) {
+      responseType = 'RESCHEDULED_SESSION';
+      // Populate course names for banner
+      originalSessions = rescheduledSessions.map(s => {
+        // Find course name from student data or fetch separately if needed
+        let courseName = 'Unknown Course';
+        for (const student of allStudents) {
+          const match = student.enrolledCourses.find(ec => 
+            ec.course?._id?.toString() === s.course.toString()
+          );
+          if (match) {
+            courseName = match.course.courseName;
+            break;
+          }
+        }
+        return {
+          courseName,
+          originalDate: s.originalDate
+        };
+      });
+    }
+
+    console.log('🔍 Searching for courses on:', {
+      date: searchDate.toISOString().split('T')[0],
+      targetDay,
+      courseIdsCount: courseIds.length,
+      regularCourseCount: regularCourses.length,
+      rescheduledCount: rescheduledSessions.length
+    });
+
+    console.log('📊 Total students with matching enrollments:', allStudents.length);
+    console.log('✅ Students after enrollment + course filtering:', resultStudents.length);
+
+    // Optional: log why some were excluded
+    allStudents.forEach(student => {
+      const matches = student.enrolledCourses.filter(ec => 
+        courseIds.includes(ec.course?._id?.toString())
+      );
+      if (matches.length === 0) {
+        console.log('❌ Student not in any target course:', student.studentId);
+      } else {
+        matches.forEach(ec => {
+          const active = isActiveEnrollment(ec, searchDate);
+          if (!active) {
+            console.log('🚫 Enrollment inactive:', student.studentId, ec.startDate, ec.endDate, searchDate);
+          }
+        });
+      }
+    });
+
+    // Final bulk response
+    return res.json({
+      type: responseType,
+      students: resultStudents,
+      originalSessions
+    });
+
   } catch (error) {
     console.error('Student search error:', error);
     res.status(500).json({ error: 'Server error during student search' });

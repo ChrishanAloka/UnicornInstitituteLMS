@@ -88,6 +88,7 @@ import Attendance from "./components/Attendance";
 import StudentProfile from "./components/StudentProfile";
 import TrackPayment from "./components/TrackPayment";
 import TrackAttendance from "./components/TrackAttendance";
+import RescheduleCourseSession from "./components/RescheduleCourseSession";
 
 
 <Route path="/unauthorized" element={<Unauthorized />} />
@@ -136,12 +137,14 @@ function App() {
             }
           >
             <Route path="/user" element={<StudentRegistration />} />
-            <Route path="/user/comp-Level1" element={<InstructorRegistration />} />
-            <Route path="/user/comp-Level2" element={<CourseRegistration />} />
-            <Route path="/user/comp-Level3" element={<Attendance />} />
-            <Route path="/user/comp-Level4" element={<StudentProfile />} />
+            <Route path="/user/instructor-registration" element={<InstructorRegistration />} />
+            <Route path="/user/course-registration" element={<CourseRegistration />} />
+            <Route path="/user/reschedule-courseSession" element={<RescheduleCourseSession />} />
+            <Route path="/user/attendance" element={<Attendance />} />
+            <Route path="/user/student-profile" element={<StudentProfile />} />
             <Route path="/user/track-payment" element={<TrackPayment />} />
             <Route path="/user/track-attendance" element={<TrackAttendance />} />
+            <Route path="/user/track-attendance" element={<RescheduleCourseSession />} />
             
           </Route>
           

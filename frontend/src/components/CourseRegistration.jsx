@@ -41,6 +41,8 @@ const CourseRegistration = () => {
   const [loadingEnrolled, setLoadingEnrolled] = useState(false);
   const [selectedUnenrollStudentIds, setSelectedUnenrollStudentIds] = useState(new Set());
 
+  const [showPastCourses, setShowPastCourses] = useState(false);
+
   // Columns for filtering & sorting
   const columns = [
     { label: "Course", key: "courseName" },
@@ -380,44 +382,58 @@ const CourseRegistration = () => {
     sunday: 7
   };
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // normalize to start of day
+
   const processedCourses = enrichedCourses
-  .filter((course) => {
-    const matchesText = !searchText || columns.some(col => {
-      const val = course[col.key];
-      return val != null && String(val).toLowerCase().includes(searchText.toLowerCase());
-    });
-    const matchesDay = !filterDay || course.dayOfWeek === filterDay;
-    return matchesText && matchesDay;
-  })
-  .sort((a, b) => {
-    // Handle weekday sorting specially
-    if (sortColumn === "dayOfWeek") {
-      const aOrder = WEEKDAY_ORDER[a.dayOfWeek?.toLowerCase()] ?? 99;
-      const bOrder = WEEKDAY_ORDER[b.dayOfWeek?.toLowerCase()] ?? 99;
-      return sortDirection === "asc" ? aOrder - bOrder : bOrder - aOrder;
-    }
+    .filter((course) => {
+      // Text & day filter (existing)
+      const matchesText = !searchText || columns.some(col => {
+        const val = course[col.key];
+        return val != null && String(val).toLowerCase().includes(searchText.toLowerCase());
+      });
+      const matchesDay = !filterDay || course.dayOfWeek === filterDay;
 
-    // Existing logic for other columns
-    let aVal = a[sortColumn] ?? "";
-    let bVal = b[sortColumn] ?? "";
+      if (!matchesText || !matchesDay) return false;
 
-    if (sortColumn === "courseStartDate") {
+      // Past course logic
+      if (showPastCourses) {
+        return true; // show all (including past)
+      }
+
+      // Hide courses that ended before today
+      if (course.courseEndDate) {
+        const endDate = new Date(course.courseEndDate);
+        endDate.setHours(0, 0, 0, 0);
+        return endDate >= today;
+      }
+
+      // If no end date, assume it's still active
+      return true;
+    })
+    .sort((a, b) => {
+      // ... your existing sort logic (unchanged)
+      if (sortColumn === "dayOfWeek") {
+        const aOrder = WEEKDAY_ORDER[a.dayOfWeek?.toLowerCase()] ?? 99;
+        const bOrder = WEEKDAY_ORDER[b.dayOfWeek?.toLowerCase()] ?? 99;
+        return sortDirection === "asc" ? aOrder - bOrder : bOrder - aOrder;
+      }
+      if (sortColumn === "courseStartDate") {
+        return sortDirection === "asc"
+          ? new Date(a.courseStartDate) - new Date(b.courseStartDate)
+          : new Date(b.courseStartDate) - new Date(a.courseStartDate);
+      }
+      if (sortColumn === "courseFees") {
+        const aVal = parseFloat(a.courseFees) || 0;
+        const bVal = parseFloat(b.courseFees) || 0;
+        return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      const aVal = a[sortColumn] ?? "";
+      const bVal = b[sortColumn] ?? "";
       return sortDirection === "asc"
-        ? new Date(aVal) - new Date(bVal)
-        : new Date(bVal) - new Date(aVal);
-    }
-
-    if (sortColumn === "courseFees") {
-      aVal = parseFloat(aVal) || 0;
-      bVal = parseFloat(bVal) || 0;
-      return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
-    }
-
-    // Default: string comparison
-    return sortDirection === "asc"
-      ? String(aVal).localeCompare(String(bVal))
-      : String(bVal).localeCompare(String(aVal));
-  });
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal));
+    });
 
   return (
     <div className="container py-4">
@@ -508,6 +524,17 @@ const CourseRegistration = () => {
               onChange={handleChange}
               className="form-control shadow-sm"
               required
+            />
+          </div>
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Course End Date (Optional)</label>
+            <input
+              type="date"
+              name="courseEndDate"
+              value={newCourse.courseEndDate}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              min={newCourse.courseStartDate || undefined} // optional: prevent end < start
             />
           </div>
           <div className="col-md-6">
@@ -693,14 +720,22 @@ const CourseRegistration = () => {
 
       {/* Filter & Table */}
       <div className="container py-4">
-        <div className="d-flex justify-content-between align-items-center mb-2">
+        <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
           <h4 className="text-secondary mb-0">📋 Registered Courses</h4>
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => setShowFilter((prev) => !prev)}
-          >
-            <i className="bi bi-funnel"></i>
-          </button>
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => setShowFilter((prev) => !prev)}
+            >
+              <i className="bi bi-funnel me-1"></i> Filter
+            </button>
+            <button
+              className={`btn ${showPastCourses ? 'btn-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setShowPastCourses(!showPastCourses)}
+            >
+              {showPastCourses ? '✅ Hide Past Courses' : '🕒 Show Past Courses'}
+            </button>
+          </div>
         </div>
 
         {showFilter && (
@@ -835,12 +870,12 @@ const CourseRegistration = () => {
                           >
                             <i className="bi bi-pencil-square me-1"></i> Edit
                           </button>
-                          <button
+                          {/* <button
                             className="btn btn-sm btn-danger d-flex align-items-center justify-content-center"
                             onClick={() => handleDelete(c._id)}
                           >
                             <i className="bi bi-trash me-1"></i> Delete
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>

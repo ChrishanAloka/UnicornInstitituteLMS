@@ -9,7 +9,7 @@ import {
   FaMoneyCheckAlt, FaUtensils, FaDollarSign, FaShoppingCart, FaHistory,
   FaBookOpen, FaClipboardList, FaUserCircle, FaPercentage, FaTruckLoading, 
   FaFirstOrder, FaMotorcycle, FaUserClock, FaCashRegister, FaBookReader,
-  FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun, FaUserGraduate,FaChalkboardTeacher,FaBook, FaUserCheck,FaUserPlus, FaChartLine, FaMoneyCheckAlt as FaPayment,
+  FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun, FaUserGraduate,FaChalkboardTeacher,FaBook, FaUserCheck,FaUserPlus, FaChartLine, FaCalendarPlus, FaMoneyCheckAlt as FaPayment,
 } from "react-icons/fa";
 import NotificationCenter from "./NotificationCenter";
 import "./AppleRoleLayout.css";
@@ -148,10 +148,12 @@ const RoleLayout = () => {
       case "user":
         return [
           { to: "/user", label: "Student Registration", icon: FaUserGraduate },
-          { to: "/user/comp-Level1", label: "Instructor Registration", icon: FaChalkboardTeacher },
-          { to: "/user/comp-Level2", label: "Course Registration", icon: FaBook },
-          { to: "/user/comp-Level3", label: "Mark Attendance", icon: FaUserCheck },
-          { to: "/user/comp-Level4", label: "Student Profile", icon: FaUserPlus },
+          { to: "/user/instructor-registration", label: "Instructor Registration", icon: FaChalkboardTeacher },
+          { to: "/user/course-registration", label: "Course Registration", icon: FaBook },
+          { to: "/user/reschedule-courseSession", label: "Reschedule Courses", icon: FaCalendarPlus },
+          { to: "/user/attendance", label: "Mark Attendance", icon: FaUserCheck },
+          { to: "/user/student-profile", label: "Student Profile", icon: FaUserPlus },
+          
           { divider: true },
           { to: "/user/track-attendance", label: "Track Attendance", icon: FaChartLine },
           { to: "/user/track-payment", label: "Track Payments", icon: FaPayment }

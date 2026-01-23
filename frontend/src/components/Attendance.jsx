@@ -8,9 +8,11 @@ import "react-toastify/dist/ReactToastify.css";
 const Attendance = () => {
   const [input, setInput] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [students, setStudents] = useState([]); // Array of students (or single in array)
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [attendanceType, setAttendanceType] = useState("NORMAL"); // 'NORMAL', 'MOVED_AWAY', 'RESCHEDULED_SESSION'
+  const [rescheduleContext, setRescheduleContext] = useState(null);
 
   const html5QrCodeRef = useRef(null);
   const isScannerActive = useRef(false);
@@ -24,23 +26,21 @@ const Attendance = () => {
   // Auto-fetch when input or date changes
   useEffect(() => {
     if (!selectedDate) return;
-
     const trimmed = input.trim();
     if (trimmed.length === 0 || trimmed.length >= 3) {
       fetchStudents();
     } else {
       setStudents([]);
+      setAttendanceType("NORMAL");
+      setRescheduleContext(null);
     }
   }, [input, selectedDate]);
 
-  // Cleanup scanner on unmount
+  // Cleanup scanner
   useEffect(() => {
     return () => {
       if (isScannerActive.current && html5QrCodeRef.current) {
-        html5QrCodeRef.current
-          .stop()
-          .then(() => html5QrCodeRef.current?.clear())
-          .catch(() => {});
+        html5QrCodeRef.current.stop().catch(() => {});
       }
     };
   }, []);
@@ -64,12 +64,33 @@ const Attendance = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Backend returns array (even for single student wrapped in array)
-      const data = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
-      setStudents(data);
+      const data = res.data;
+
+      if (data.type === "MOVED_AWAY") {
+        setAttendanceType("MOVED_AWAY");
+        setRescheduleContext(data);
+        setStudents([]);
+      } else if (data.type === "RESCHEDULED_SESSION") {
+        setAttendanceType("RESCHEDULED_SESSION");
+        setRescheduleContext(data);
+        setStudents(data.students || []);
+      } else if (data.type === "NORMAL") {
+        // ✅ Handle new structured response
+        setStudents(data.students || []);
+        setAttendanceType("NORMAL");
+        setRescheduleContext(null);
+      } else {
+        // ❓ Fallback: old format (raw student or array)
+        const studentArray = Array.isArray(data) ? data : data ? [data] : [];
+        setStudents(studentArray);
+        setAttendanceType("NORMAL");
+        setRescheduleContext(null);
+      }
     } catch (err) {
       console.error("Fetch error:", err);
       setStudents([]);
+      setAttendanceType("NORMAL");
+      setRescheduleContext(null);
       const msg = err.response?.data?.error || "Failed to load students";
       toast.error(msg);
     } finally {
@@ -77,7 +98,7 @@ const Attendance = () => {
     }
   };
 
-  const handleMarkAttendance = async (studentId, courseId, status = 'present') => {
+  const handleMarkAttendance = async (studentId, courseId, status = "present") => {
     if (!studentId || !courseId || !selectedDate) return;
 
     try {
@@ -88,12 +109,12 @@ const Attendance = () => {
           studentId,
           courseId,
           date: selectedDate,
-          status, // 'present' or 'absent'
+          status,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(`Attendance marked as ${status}!`);
-      fetchStudents(); // Refresh list
+      fetchStudents(); // Refresh
     } catch (err) {
       toast.error("Failed to mark attendance");
     }
@@ -101,15 +122,12 @@ const Attendance = () => {
 
   const startScanner = async () => {
     if (isScanning || isScannerActive.current) return;
-
     setIsScanning(true);
     setStudents([]);
-
     try {
       const qrCode = new Html5Qrcode("qr-reader");
       html5QrCodeRef.current = qrCode;
       isScannerActive.current = true;
-
       await qrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -119,7 +137,6 @@ const Attendance = () => {
         }
       );
     } catch (err) {
-      console.error("QR Scan error:", err);
       toast.error("Camera access failed. Use HTTPS and allow permission.");
       stopScanner();
     }
@@ -130,9 +147,7 @@ const Attendance = () => {
       try {
         await html5QrCodeRef.current.stop();
         await html5QrCodeRef.current.clear();
-      } catch (e) {
-        /* ignore */
-      }
+      } catch (e) {}
       html5QrCodeRef.current = null;
     }
     isScannerActive.current = false;
@@ -169,7 +184,25 @@ const Attendance = () => {
         className="mb-5 p-4 bg-body shadow-sm rounded border"
       >
         <div className="row g-3">
-          {/* Student Input */}
+          <div className="col-md-3">
+            <label className="form-label fw-semibold">Date</label>
+            <input
+              type="date"
+              max={new Date().toISOString().split("T")[0]}
+              className="form-control"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+          </div>
+
+          <div className="col-md-3 d-flex align-items-end">
+            <div className="w-100 text-center p-2 bg-light rounded">
+              <small className="text-muted">
+                Selected: {selectedDate ? formatDateDisplay(selectedDate) : "—"}
+              </small>
+            </div>
+          </div>
+
           <div className="col-md-7">
             <label className="form-label fw-semibold">Student ID or Name (optional)</label>
             <div className="input-group">
@@ -193,7 +226,6 @@ const Attendance = () => {
             </div>
           </div>
 
-          {/* Scan Button */}
           <div className="col-md-3 d-flex align-items-end">
             <button
               className="btn btn-outline-primary w-100"
@@ -205,36 +237,14 @@ const Attendance = () => {
             </button>
           </div>
 
-          {/* Search Button */}
           <div className="col-md-2 d-flex align-items-end">
             <button type="submit" className="btn btn-primary w-100" disabled={loading}>
               {loading ? "Searching..." : "🔍 Search"}
             </button>
           </div>
-
-          {/* Date Picker */}
-          <div className="col-md-3">
-            <label className="form-label fw-semibold">Date</label>
-            <input
-              type="date"
-              max={new Date().toISOString().split("T")[0]}
-              className="form-control"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            />
-          </div>
-
-          {/* Date Info */}
-          <div className="col-md-2 d-flex align-items-end">
-            <div className="w-100 text-center p-2  rounded">
-              <small className="text-muted">
-                Selected: {selectedDate ? formatDateDisplay(selectedDate) : "—"}
-              </small>
-            </div>
-          </div>
         </div>
 
-        {/* QR Scanner Container */}
+        {/* QR Scanner */}
         <div
           id="qr-reader"
           style={{
@@ -247,11 +257,7 @@ const Attendance = () => {
         ></div>
 
         {isScanning && (
-          <button
-            className="btn btn-secondary mt-2"
-            type="button"
-            onClick={stopScanner}
-          >
+          <button className="btn btn-secondary mt-2" type="button" onClick={stopScanner}>
             Cancel Scan
           </button>
         )}
@@ -263,49 +269,82 @@ const Attendance = () => {
         )}
       </form>
 
-      {/* Results */}
-      {students.length > 0 && !isScanning && (
-        <div className="mt-4">
-          {/* Group students by course */}
-          {(() => {
-            // Build a map: courseId → { courseInfo, students[] }
-            const courseMap = new Map();
+      {/* ─── MOVED AWAY MESSAGE ─── */}
+      {attendanceType === "MOVED_AWAY" && rescheduleContext && (
+        <div className="alert alert-warning mb-4">
+          <strong>⚠️ Session Rescheduled!</strong><br />
+          The class <strong>"{rescheduleContext.courseName}"</strong> scheduled for{" "}
+          <strong>{formatDateDisplay(selectedDate)}</strong> has been moved to{" "}
+          <strong>{formatDateDisplay(rescheduleContext.newDate)}</strong>.
+          <br />
+          Please select the new date to mark attendance.
+          <button
+            className="btn btn-primary btn-sm mt-2"
+            onClick={() =>
+              setSelectedDate(rescheduleContext.newDate.toISOString().split("T")[0])
+            }
+          >
+            Go to {formatDateDisplay(rescheduleContext.newDate)}
+          </button>
+        </div>
+      )}
 
-            students.forEach(student => {
-              student.enrolledCourses.forEach(enroll => {
+      {/* ─── RESCHEDULED SESSION BANNER ─── */}
+      {attendanceType === "RESCHEDULED_SESSION" && rescheduleContext && (
+        <div className="alert alert-info mb-4">
+          <strong>🔄 Rescheduled Session</strong><br />
+          This is a make-up class for:
+          <ul className="mb-0 mt-2">
+            {rescheduleContext.originalSessions.map((sess, i) => (
+              <li key={i}>
+                <strong>{sess.courseName}</strong> (originally on{" "}
+                {formatDateDisplay(sess.originalDate)},{" "}
+                {new Date(sess.originalDate).toLocaleDateString("en-US", { weekday: "long" })}
+                )
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ─── STUDENT TABLE ─── */}
+      {attendanceType !== "MOVED_AWAY" && students.length > 0 && !isScanning && (
+        <div className="mt-4">
+          {(() => {
+            const courseMap = new Map();
+            students.forEach((student) => {
+              // 🔒 Safeguard: ensure enrolledCourses exists and is an array
+              const enrollments = Array.isArray(student.enrolledCourses) 
+                ? student.enrolledCourses 
+                : [];
+
+              enrollments.forEach((enroll) => {
+                // 🔒 Also ensure enroll.course exists
+                if (!enroll?.course?._id) return;
+
                 const courseId = enroll.course._id.toString();
                 if (!courseMap.has(courseId)) {
-                  courseMap.set(courseId, {
-                    course: enroll.course,
-                    students: []
-                  });
+                  courseMap.set(courseId, { course: enroll.course, students: [] });
                 }
-
-                courseMap.get(courseId).students.push({
-                  ...student,
-                  enrollment: enroll // carry enrollment info (status, dates, etc.)
-                });
+                courseMap.get(courseId).students.push({ ...student, enrollment: enroll });
               });
             });
 
-            // Convert to array and sort (optional: by course name)
-            const groupedCourses = Array.from(courseMap.values())
-              .sort((a, b) =>
-                a.course.courseName.localeCompare(b.course.courseName)
-              );
+            const groupedCourses = Array.from(courseMap.values()).sort((a, b) =>
+              a.course.courseName.localeCompare(b.course.courseName)
+            );
 
             return groupedCourses.map(({ course, students }) => (
               <div key={course._id} className="mb-5">
-                {/* Course Header */}
                 <div className="p-3 bg-primary text-white rounded-top">
                   <h4 className="mb-1">{course.courseName}</h4>
                   <div>
-                    <span className="me-3">📅 {getDayOfWeek(selectedDate).charAt(0).toUpperCase() + getDayOfWeek(selectedDate).slice(1)}</span>
+                    <span className="me-3">
+                      📅 {getDayOfWeek(selectedDate).charAt(0).toUpperCase() + getDayOfWeek(selectedDate).slice(1)}
+                    </span>
                     <span>⏰ {course.timeFrom} – {course.timeTo}</span>
                   </div>
                 </div>
-
-                {/* Students Table */}
                 <div className="table-responsive border rounded-bottom">
                   <table className="table table-hover align-middle mb-0">
                     <thead className="table-light">
@@ -319,32 +358,42 @@ const Attendance = () => {
                     </thead>
                     <tbody>
                       {students.map(({ _id, studentId, name, currentGrade, enrollment }) => (
-                        <tr key={_id}>
+                        <tr key={_id || studentId}>
                           <td><strong>{studentId}</strong></td>
                           <td>{name}</td>
                           <td>{currentGrade || "—"}</td>
                           <td>
-                            {formatDateDisplay(enrollment.startDate)} →{" "}
-                            {enrollment.endDate ? formatDateDisplay(enrollment.endDate) : "Ongoing"}
+                            {enrollment?.startDate 
+                              ? formatDateDisplay(enrollment.startDate) 
+                              : "—"} →{" "}
+                            {enrollment?.endDate 
+                              ? formatDateDisplay(enrollment.endDate) 
+                              : "Ongoing"}
                           </td>
                           <td className="text-center">
-                            {enrollment.isMarked ? (
-                              <span className={`badge ${enrollment.status === 'absent' ? 'bg-danger' : 'bg-success'}`}>
-                                {enrollment.status === 'absent' ? '❌ Absent' : '✅ Present'}
+                            {enrollment?.isMarked ? (
+                              <span
+                                className={`badge ${
+                                  enrollment.status === "absent" ? "bg-danger" : "bg-success"
+                                }`}
+                              >
+                                {enrollment.status === "absent" ? "❌ Absent" : "✅ Present"}
                               </span>
                             ) : (
                               <div className="d-flex gap-2 justify-content-center">
                                 <button
                                   className="btn btn-sm btn-success"
-                                  onClick={() => handleMarkAttendance(studentId, course._id, 'present')}
-                                  title="Mark Present"
+                                  onClick={() =>
+                                    handleMarkAttendance(studentId, course._id, "present")
+                                  }
                                 >
                                   ✅ Present
                                 </button>
                                 <button
                                   className="btn btn-sm btn-danger"
-                                  onClick={() => handleMarkAttendance(studentId, course._id, 'absent')}
-                                  title="Mark Absent"
+                                  onClick={() =>
+                                    handleMarkAttendance(studentId, course._id, "absent")
+                                  }
                                 >
                                   ❌ Absent
                                 </button>
@@ -362,16 +411,28 @@ const Attendance = () => {
         </div>
       )}
 
+      {/* Empty States */}
+      {!loading &&
+        students.length === 0 &&
+        attendanceType === "NORMAL" &&
+        input.trim().length === 0 && (
+          <div className="alert alert-info mt-4">
+            No students have active courses scheduled on{" "}
+            {formatDateDisplay(selectedDate)} ({targetDay}).
+          </div>
+        )}
+
+      {!loading &&
+        students.length === 0 &&
+        attendanceType === "RESCHEDULED_SESSION" && (
+          <div className="alert alert-info mt-4">
+            No students enrolled in rescheduled sessions for this date.
+          </div>
+        )}
+
       {!loading && students.length === 0 && input.trim().length > 0 && (
         <div className="alert alert-warning mt-4">
           No student found matching "{input}"
-        </div>
-      )}
-
-      {!loading && students.length === 0 && input.trim().length === 0 && selectedDate && (
-        <div className="alert alert-info mt-4">
-          No students have active weekly courses scheduled on{" "}
-          {formatDateDisplay(selectedDate)} ({targetDay}).
         </div>
       )}
 
