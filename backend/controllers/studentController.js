@@ -316,7 +316,6 @@ exports.getAllRegisterdStudents = async (req, res) => {
 
     const total = await Student.countDocuments();
     const students = await Student.find()
-      .select('name studentId birthday phoneNo email school currentGrade createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

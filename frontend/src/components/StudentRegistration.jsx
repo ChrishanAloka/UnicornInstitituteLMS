@@ -83,6 +83,7 @@ const StudentRegistration = () => {
         }
       );
       setStudents(res.data.students || []);
+      console.log(res.data.students);
       setTotalPages(res.data.totalPages || 1);
       setCurrentPage(page);
     } catch (err) {
@@ -135,6 +136,7 @@ const StudentRegistration = () => {
       ? String(aVal).localeCompare(String(bVal))
       : String(bVal).localeCompare(String(aVal));
   });
+  
 
   const handleChange = (e) =>
     setNewStudent({ ...newStudent, [e.target.name]: e.target.value });
@@ -837,6 +839,11 @@ const StudentRegistration = () => {
                       <div style={{ fontSize: "10px", marginTop: "4px" }}>
                         Guardian: {viewingStudent.guardianName || "—"}
                       </div>
+                      {viewingStudent.guardianPhoneNo && (
+                        <div style={{ fontSize: "10px" }}>
+                          Guardian Phone: {viewingStudent.guardianPhoneNo}
+                        </div>
+                      )}
                     </div>
 
                     {/* QR */}
