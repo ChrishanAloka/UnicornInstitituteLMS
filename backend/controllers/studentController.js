@@ -259,11 +259,16 @@ exports.getStudentById = async (req, res) => {
 exports.registerStudent = async (req, res) => {
   try {
     const { 
-      studentId, name, birthday, address, school, currentGrade, phoneNo,
+      studentId, title, initials, firstName, secondName, surname, 
+      birthday, address, school, currentGrade, phoneNo,
       email, guardianName, guardianPhoneNo, nicNumber 
     } = req.body;
 
-    // Validate mandatory new fields
+    // Validate mandatory fields
+    if (!firstName || !surname) {
+      return res.status(400).json({ error: 'First name and surname are required' });
+    }
+
     if (!guardianName || !guardianPhoneNo) {
       return res.status(400).json({ error: 'Guardian name and phone number are required' });
     }
@@ -273,9 +278,23 @@ exports.registerStudent = async (req, res) => {
       return res.status(400).json({ error: 'Student ID already exists' });
     }
 
+    // Build full name from components
+    const nameParts = [];
+    if (title) nameParts.push(title);
+    if (initials) nameParts.push(initials);
+    if (firstName) nameParts.push(firstName);
+    if (secondName) nameParts.push(secondName);
+    if (surname) nameParts.push(surname);
+    const fullName = nameParts.join(' ');
+
     const student = new Student({
       studentId,
-      name,
+      title,
+      initials,
+      firstName,
+      secondName,
+      surname,
+      name: fullName, // Explicitly set the name
       birthday,
       address,
       school,
@@ -338,11 +357,16 @@ exports.updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
     const { 
-      studentId, name, birthday, address, school, currentGrade, phoneNo,
+      studentId, title, initials, firstName, secondName, surname,
+      birthday, address, school, currentGrade, phoneNo,
       email, guardianName, guardianPhoneNo, nicNumber 
     } = req.body;
 
-    // Validate mandatory new fields on update
+    // Validate mandatory fields
+    if (!firstName || !surname) {
+      return res.status(400).json({ error: 'First name and surname are required' });
+    }
+
     if (!guardianName || !guardianPhoneNo) {
       return res.status(400).json({ error: 'Guardian name and phone number are required' });
     }
@@ -352,10 +376,21 @@ exports.updateStudent = async (req, res) => {
       return res.status(400).json({ error: 'Student ID already in use' });
     }
 
+    // Build full name from components
+    const nameParts = [];
+    if (title) nameParts.push(title);
+    if (initials) nameParts.push(initials);
+    if (firstName) nameParts.push(firstName);
+    if (secondName) nameParts.push(secondName);
+    if (surname) nameParts.push(surname);
+    const fullName = nameParts.join(' ');
+
     const updated = await Student.findByIdAndUpdate(
       id,
       { 
-        studentId, name, birthday, address, school, currentGrade, phoneNo,
+        studentId, title, initials, firstName, secondName, surname,
+        name: fullName, // Explicitly set the name
+        birthday, address, school, currentGrade, phoneNo,
         email, guardianName, guardianPhoneNo, nicNumber 
       },
       { new: true, runValidators: true }

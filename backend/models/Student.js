@@ -7,9 +7,35 @@ const studentSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  name: {
+  // Name fields
+  title: {
+    type: String,
+    enum: ['Mr.', 'Ms.', 'Mrs.', 'Master', 'Miss', 'Dr.', 'Prof.', 'Rev.', ''],
+    default: '',
+    trim: true
+  },
+  initials: {
+    type: String,
+    trim: true
+  },
+  firstName: {
     type: String,
     required: true,
+    trim: true
+  },
+  secondName: {
+    type: String,
+    trim: true
+  },
+  surname: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  // Full name (computed or stored for backward compatibility)
+  name: {
+    type: String,
+    required: false, // Not required since it's auto-generated
     trim: true
   },
   birthday: {
@@ -50,6 +76,22 @@ const studentSchema = new mongoose.Schema({
   }]
 }, {
   timestamps: true // adds createdAt, updatedAt
+});
+
+// Pre-save hook to automatically construct full name from components
+// This needs to run BEFORE validation
+studentSchema.pre('validate', function(next) {
+  // Always construct the name from components
+  const parts = [];
+  
+  if (this.title) parts.push(this.title);
+  if (this.initials) parts.push(this.initials);
+  if (this.firstName) parts.push(this.firstName);
+  if (this.secondName) parts.push(this.secondName);
+  if (this.surname) parts.push(this.surname);
+  
+  this.name = parts.join(' ');
+  next();
 });
 
 module.exports = mongoose.model('Student', studentSchema);

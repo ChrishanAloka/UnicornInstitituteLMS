@@ -12,7 +12,11 @@ const StudentRegistration = () => {
   const [students, setStudents] = useState([]);
   const [newStudent, setNewStudent] = useState({
     studentId: "",
-    name: "",
+    title: "",
+    initials: "",
+    firstName: "",
+    secondName: "",
+    surname: "",
     birthday: "",
     address: "",
     school: "",
@@ -43,6 +47,7 @@ const StudentRegistration = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loadingStudents, setLoadingStudents] = useState(false);
 
+  const titleOptions = ['Mr.', 'Ms.', 'Mrs.', 'Master', 'Miss', 'Dr.', 'Prof.', 'Rev.'];
 
   // Generate unique student ID (you can also let backend generate it)
   const generateStudentId = () => {
@@ -160,12 +165,12 @@ const StudentRegistration = () => {
     e.preventDefault();
 
     const { 
-      name, birthday, phoneNo, 
+      firstName, surname, birthday, phoneNo, 
       guardianName, guardianPhoneNo 
     } = newStudent;
 
-    if (!name || !birthday || !phoneNo || !guardianName || !guardianPhoneNo) {
-      toast.error("Please fill all required fields");
+    if (!firstName || !surname || !birthday || !phoneNo || !guardianName || !guardianPhoneNo) {
+      toast.error("Please fill all required fields (First Name, Surname, Birthday, Phone, Guardian Name & Phone)");
       return;
     }
 
@@ -184,7 +189,7 @@ const StudentRegistration = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // ✅ Send ISO date to backend
+      // ✅ Send ISO date to backend with all name fields
       const payload = {
         ...newStudent,
         studentId,
@@ -202,7 +207,11 @@ const StudentRegistration = () => {
       setStudents([...students, res.data]);
       setNewStudent({
         studentId: "",
-        name: "",
+        title: "",
+        initials: "",
+        firstName: "",
+        secondName: "",
+        surname: "",
         birthday: "",
         address: "",
         school: "",
@@ -236,11 +245,15 @@ const StudentRegistration = () => {
     setEditingStudent(student._id);
     setEditData({
       studentId: student.studentId,
-      name: student.name,
+      title: student.title || "",
+      initials: student.initials || "",
+      firstName: student.firstName || "",
+      secondName: student.secondName || "",
+      surname: student.surname || "",
       birthday: formatDateToDisplay(student.birthday),
-      address: student.address,
-      school: student.school,
-      currentGrade: student.currentGrade,
+      address: student.address || "",
+      school: student.school || "",
+      currentGrade: student.currentGrade || "",
       phoneNo: student.phoneNo,
       email: student.email || "",               // ✅
       guardianName: student.guardianName || "", // ✅
@@ -257,11 +270,11 @@ const StudentRegistration = () => {
     e.preventDefault();
 
     const { 
-        name, birthday, phoneNo, 
+        firstName, surname, birthday, phoneNo, 
         guardianName, guardianPhoneNo 
       } = editData;
 
-    if (!name || !birthday || !phoneNo || !guardianName || !guardianPhoneNo) {
+    if (!firstName || !surname || !birthday || !phoneNo || !guardianName || !guardianPhoneNo) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -345,21 +358,79 @@ const StudentRegistration = () => {
               onChange={handleChange}
               className="form-control shadow-sm"
               placeholder="Leave blank for auto ID"
-              // disabled={!!newStudent.studentId}
             />
           </div>
+
+          {/* Title/Designation */}
           <div className="col-md-6">
-            <label className="form-label fw-semibold">Full Name *</label>
+            <label className="form-label fw-semibold">Title/Designation</label>
+            <select
+              name="title"
+              value={newStudent.title}
+              onChange={handleChange}
+              className="form-select shadow-sm"
+            >
+              <option value="">Select Title (Optional)</option>
+              {titleOptions.map(title => (
+                <option key={title} value={title}>{title}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Initials */}
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Initials</label>
             <input
               type="text"
-              name="name"
-              value={newStudent.name}
+              name="initials"
+              value={newStudent.initials}
               onChange={handleChange}
               className="form-control shadow-sm"
-              placeholder="e.g. John Smith"
+              placeholder="e.g. A.B."
+            />
+          </div>
+
+          {/* First Name */}
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">First Name *</label>
+            <input
+              type="text"
+              name="firstName"
+              value={newStudent.firstName}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              placeholder="e.g. John"
               required
             />
           </div>
+
+          {/* Second Name */}
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Second Name</label>
+            <input
+              type="text"
+              name="secondName"
+              value={newStudent.secondName}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              placeholder="e.g. Michael"
+            />
+          </div>
+
+          {/* Surname */}
+          <div className="col-md-6">
+            <label className="form-label fw-semibold">Surname/Last Name *</label>
+            <input
+              type="text"
+              name="surname"
+              value={newStudent.surname}
+              onChange={handleChange}
+              className="form-control shadow-sm"
+              placeholder="e.g. Smith"
+              required
+            />
+          </div>
+
           <div className="col-md-6">
             <label className="form-label fw-semibold">Birthday *</label>
             <div className="input-group">
@@ -437,6 +508,7 @@ const StudentRegistration = () => {
               onChange={handleChange}
               className="form-control shadow-sm"
               placeholder="e.g. Green Valley High"
+              required
             />
           </div>
           <div className="col-md-6">
@@ -447,7 +519,8 @@ const StudentRegistration = () => {
               value={newStudent.currentGrade}
               onChange={handleChange}
               className="form-control shadow-sm"
-              placeholder="e.g. Grade 10"
+              placeholder="e.g. 10"
+              required
             />
           </div>
           <div className="col-md-12">
@@ -459,6 +532,7 @@ const StudentRegistration = () => {
               onChange={handleChange}
               className="form-control shadow-sm"
               placeholder="Full address"
+              required
             />
           </div>
           {/* New Fields */}
@@ -534,7 +608,7 @@ const StudentRegistration = () => {
       {/* Edit Modal */}
       {editingStudent && (
         <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog">
+          <div className="modal-dialog modal-lg">
             <div className="modal-content border-0 shadow-lg">
               <div className="modal-header bg-primary text-white">
                 <h5 className="modal-title">✏️ Edit Student</h5>
@@ -548,185 +622,241 @@ const StudentRegistration = () => {
               </div>
               <div className="modal-body">
                 <form onSubmit={handleUpdate}>
-                  {/* Student ID */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Student ID</label>
-                    <input
-                      type="text"
-                      name="studentId"
-                      value={editData.studentId}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                      disabled
-                    />
-                  </div>
-
-                  {/* Full Name */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Full Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={editData.name}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                      required
-                    />
-                  </div>
-
-                  {/* Birthday — Flexible Input */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Birthday *</label>
-                    <div className="input-group">
-                      {editBirthdayMode === 'text' ? (
-                        <input
-                          type="text"
-                          name="birthday"
-                          value={editData.birthday}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, '').slice(0, 8);
-                            if (value.length >= 3) {
-                              value = value.slice(0, 2) + '/' + value.slice(2);
-                            }
-                            if (value.length >= 6) {
-                              value = value.slice(0, 5) + '/' + value.slice(5);
-                            }
-                            setEditData({ ...editData, birthday: value });
-                          }}
-                          className="form-control shadow-sm"
-                          placeholder="dd/mm/yyyy"
-                          required
-                        />
-                      ) : (
-                        <input
-                          type="date"
-                          value={editData.birthday ? formatDateToISO(editData.birthday) : ''}
-                          onChange={(e) => {
-                            const isoDate = e.target.value;
-                            if (isoDate) {
-                              const [year, month, day] = isoDate.split('-');
-                              setEditData({ ...editData, birthday: `${day}/${month}/${year}` });
-                            }
-                            setEditBirthdayMode('text');
-                          }}
-                          className="form-control shadow-sm"
-                          required
-                          autoFocus
-                        />
-                      )}
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => {
-                          setEditBirthdayMode(editBirthdayMode === 'text' ? 'date' : 'text');
-                        }}
-                      >
-                        📅
-                      </button>
+                  <div className="row g-3">
+                    {/* Student ID */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Student ID</label>
+                      <input
+                        type="text"
+                        name="studentId"
+                        value={editData.studentId}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        disabled
+                      />
                     </div>
-                  </div>
 
-                  {/* Phone No */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Phone No *</label>
-                    <input
-                      type="text"
-                      name="phoneNo"
-                      value={editData.phoneNo}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                      required
-                    />
-                  </div>
+                    {/* Title */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Title/Designation</label>
+                      <select
+                        name="title"
+                        value={editData.title}
+                        onChange={handleEditChange}
+                        className="form-select shadow-sm"
+                      >
+                        <option value="">Select Title (Optional)</option>
+                        {titleOptions.map(title => (
+                          <option key={title} value={title}>{title}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  {/* School */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">School</label>
-                    <input
-                      type="text"
-                      name="school"
-                      value={editData.school}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                    />
-                  </div>
+                    {/* Initials */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Initials</label>
+                      <input
+                        type="text"
+                        name="initials"
+                        value={editData.initials}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        placeholder="e.g. A.B."
+                      />
+                    </div>
 
-                  {/* Current Grade */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Current Grade</label>
-                    <input
-                      type="text"
-                      name="currentGrade"
-                      value={editData.currentGrade}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                    />
-                  </div>
+                    {/* First Name */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">First Name *</label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={editData.firstName}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        required
+                      />
+                    </div>
 
-                  {/* Address */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Address</label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={editData.address}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                    />
-                  </div>
+                    {/* Second Name */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Second Name</label>
+                      <input
+                        type="text"
+                        name="secondName"
+                        value={editData.secondName}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                      />
+                    </div>
 
-                  {/* Email Address */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Email Address</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={editData.email}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                      placeholder="e.g. parent@example.com"
-                    />
-                  </div>
+                    {/* Surname */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Surname/Last Name *</label>
+                      <input
+                        type="text"
+                        name="surname"
+                        value={editData.surname}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        required
+                      />
+                    </div>
 
-                  {/* Guardian's Name */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Guardian's Name *</label>
-                    <input
-                      type="text"
-                      name="guardianName"
-                      value={editData.guardianName}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                      placeholder="e.g. Jane Smith"
-                      required
-                    />
-                  </div>
+                    {/* Birthday — Flexible Input */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Birthday *</label>
+                      <div className="input-group">
+                        {editBirthdayMode === 'text' ? (
+                          <input
+                            type="text"
+                            name="birthday"
+                            value={editData.birthday}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                              if (value.length >= 3) {
+                                value = value.slice(0, 2) + '/' + value.slice(2);
+                              }
+                              if (value.length >= 6) {
+                                value = value.slice(0, 5) + '/' + value.slice(5);
+                              }
+                              setEditData({ ...editData, birthday: value });
+                            }}
+                            className="form-control shadow-sm"
+                            placeholder="dd/mm/yyyy"
+                            required
+                          />
+                        ) : (
+                          <input
+                            type="date"
+                            value={editData.birthday ? formatDateToISO(editData.birthday) : ''}
+                            onChange={(e) => {
+                              const isoDate = e.target.value;
+                              if (isoDate) {
+                                const [year, month, day] = isoDate.split('-');
+                                setEditData({ ...editData, birthday: `${day}/${month}/${year}` });
+                              }
+                              setEditBirthdayMode('text');
+                            }}
+                            className="form-control shadow-sm"
+                            required
+                            autoFocus
+                          />
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          onClick={() => {
+                            setEditBirthdayMode(editBirthdayMode === 'text' ? 'date' : 'text');
+                          }}
+                        >
+                          📅
+                        </button>
+                      </div>
+                    </div>
 
-                  {/* Guardian Phone No */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">Guardian Phone No *</label>
-                    <input
-                      type="text"
-                      name="guardianPhoneNo"
-                      value={editData.guardianPhoneNo}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                      placeholder="e.g. 0771234567"
-                      required
-                    />
-                  </div>
+                    {/* Phone No */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Phone No *</label>
+                      <input
+                        type="text"
+                        name="phoneNo"
+                        value={editData.phoneNo}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        required
+                      />
+                    </div>
 
-                  {/* NIC Number */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">NIC Number</label>
-                    <input
-                      type="text"
-                      name="nicNumber"
-                      value={editData.nicNumber}
-                      onChange={handleEditChange}
-                      className="form-control shadow-sm"
-                      placeholder="e.g. 901234567V"
-                    />
+                    {/* School */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">School</label>
+                      <input
+                        type="text"
+                        name="school"
+                        value={editData.school}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                      />
+                    </div>
+
+                    {/* Current Grade */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Current Grade</label>
+                      <input
+                        type="text"
+                        name="currentGrade"
+                        value={editData.currentGrade}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                      />
+                    </div>
+
+                    {/* Address */}
+                    <div className="col-md-12">
+                      <label className="form-label fw-semibold">Address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={editData.address}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                      />
+                    </div>
+
+                    {/* Email Address */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={editData.email}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        placeholder="e.g. parent@example.com"
+                      />
+                    </div>
+
+                    {/* Guardian's Name */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Guardian's Name *</label>
+                      <input
+                        type="text"
+                        name="guardianName"
+                        value={editData.guardianName}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        placeholder="e.g. Jane Smith"
+                        required
+                      />
+                    </div>
+
+                    {/* Guardian Phone No */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Guardian Phone No *</label>
+                      <input
+                        type="text"
+                        name="guardianPhoneNo"
+                        value={editData.guardianPhoneNo}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        placeholder="e.g. 0771234567"
+                        required
+                      />
+                    </div>
+
+                    {/* NIC Number */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">NIC Number</label>
+                      <input
+                        type="text"
+                        name="nicNumber"
+                        value={editData.nicNumber}
+                        onChange={handleEditChange}
+                        className="form-control shadow-sm"
+                        placeholder="e.g. 901234567V"
+                      />
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
@@ -1067,12 +1197,12 @@ const StudentRegistration = () => {
                           >
                             <i className="bi bi-eye me-1"></i> View
                           </button>
-                          <button
+                          {/* <button
                             className="btn btn-sm btn-secondary d-flex align-items-center justify-content-center"
                             onClick={() => navigate(`/user/comp-Level4?studentId=${s._id}`)}
                           >
                             <i className="bi bi-person-lines-fill me-1"></i> Profile
-                          </button>
+                          </button> */}
                           <button
                             className="btn btn-sm btn-primary d-flex align-items-center justify-content-center"
                             onClick={() => openEditModal(s)}
