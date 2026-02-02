@@ -342,9 +342,342 @@ const StudentRegistration = () => {
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   };
 
+  // Print all student cards - 10 per page (2 columns × 5 rows)
+  const printAllCards = () => {
+    if (students.length === 0) {
+      toast.error("No students to print");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    
+    // Group students into pages (10 per page)
+    const cardsPerPage = 10;
+    const pages = [];
+    for (let i = 0; i < students.length; i += cardsPerPage) {
+      pages.push(students.slice(i, i + cardsPerPage));
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>All Student ID Cards</title>
+          <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: 'Inter', Arial, sans-serif;
+              background: white;
+              padding: 0;
+            }
+            
+            .page {
+              width: 210mm; /* A4 width */
+              min-height: 297mm; /* A4 height */
+              margin: 0 auto;
+              padding: 10mm;
+              background: white;
+              position: relative;
+            }
+            
+            @media print {
+              @page {
+                size: A4;
+                margin: 0;
+              }
+              
+              body {
+                padding: 0;
+                margin: 0;
+              }
+              
+              .page {
+                padding: 10mm;
+                margin: 0;
+                page-break-after: always;
+              }
+              
+              .page:last-child {
+                page-break-after: auto;
+              }
+            }
+            
+            .cards-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 4mm 3mm;
+              height: 100%;
+            }
+            
+            .card-row {
+              display: grid;
+              grid-template-rows: repeat(5, 1fr);
+              gap: 4mm;
+              height: 100%;
+            }
+            
+            .student-card {
+              width: 83mm;
+              height: 47mm;
+              background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%) !important;
+              color: #ffffff !important;
+              border-radius: 3mm;
+              overflow: hidden;
+              position: relative;
+              display: flex;
+              font-family: 'Inter', Arial, sans-serif;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            
+            .logo-container {
+              position: absolute;
+              top: 2mm;
+              right: 2mm;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+            
+            .rounded-logo {
+              width: 12mm;
+              height: 12mm;
+              border-radius: 50%;
+              overflow: hidden;
+              border: 1px solid rgba(255,255,255,0.3);
+              background: rgba(255,255,255,0.1);
+            }
+            
+            .rounded-logo img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            
+            .institute-name {
+              font-size: 2.2mm;
+              font-weight: 600;
+              text-align: center;
+              margin-top: 1mm;
+              line-height: 1.1;
+            }
+            
+            .card-content {
+              flex: 1;
+              padding: 3mm;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            }
+            
+            .student-info h3 {
+              font-size: 3.5mm;
+              font-weight: 700;
+              margin-bottom: 1mm;
+              line-height: 1.2;
+              word-wrap: break-word;
+              max-height: 7mm;
+              overflow: hidden;
+            }
+            
+            .student-info p {
+              font-size: 2.2mm;
+              margin: 0.6mm 0;
+              opacity: 0.9;
+              line-height: 1.2;
+            }
+            
+            .student-info p strong {
+              opacity: 1;
+            }
+            
+            .institute-contact {
+              font-size: 2mm;
+              opacity: 0.85;
+              line-height: 1.2;
+              margin-top: 1.5mm;
+            }
+            
+            .qr-code {
+              position: absolute;
+              bottom: 12mm;
+              right: 12mm;
+              width: 6mm;
+              height: 6mm;
+            }
+            
+            .qr-code canvas {
+              width: 50%;
+              height: 50%;
+              border: 1px solid #fff;
+            }
+            
+            .page-header {
+              text-align: center;
+              margin-bottom: 6mm;
+              padding-bottom: 3mm;
+              border-bottom: 1px solid #333;
+            }
+            
+            .page-header h1 {
+              font-size: 4.5mm;
+              color: #2c5364;
+              margin-bottom: 1.5mm;
+            }
+            
+            .page-header p {
+              font-size: 3mm;
+              color: #666;
+            }
+
+            @media print {
+              * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            }
+
+          </style>
+        </head>
+        <body>
+    `);
+
+    // Add each page
+    pages.forEach((pageStudents, pageIndex) => {
+      printWindow.document.write(`
+        <div class="page">
+          <div class="page-header">
+            <h1> Unicorn Institute - Student ID Cards</h1>
+            <p>Page ${pageIndex + 1} of ${pages.length}</p>
+          </div>
+          <div class="cards-grid">
+            <div class="card-row">
+      `);
+
+      // Add cards to first column (first 5 students)
+      pageStudents.slice(0, 5).forEach(student => {
+        const dob = student.birthday ? new Date(student.birthday).toLocaleDateString("en-GB") : "—";
+        printWindow.document.write(`
+          <div class="student-card">
+            <div class="logo-container">
+              <div class="rounded-logo">
+                <img src="/logo.png" alt="Logo">
+              </div>
+              <div class="institute-name">UNICORN<br>INSTITUTE</div>
+            </div>
+            
+            <div class="card-content">
+              <div class="student-info">
+                <h3>${student.firstName} ${student.surname}</h3>
+                <p>Student ID: <strong>${student.studentId}</strong></p>
+                <p>Grade: ${student.currentGrade || "—"}</p>
+                <p>DOB: ${dob}</p>
+                <p>Guardian: ${student.guardianName || "—"}</p>
+                <p>Guardian Phone: ${student.guardianPhoneNo}</p>
+                
+              </div>
+              
+              <div class="institute-contact">
+                Suruwama Junction, Weliweriya.<br>
+                033 43 32 935 / 077 47 42 935
+              </div>
+              
+              <div class="qr-code" id="qr-${student._id}"></div>
+            </div>
+          </div>
+        `);
+      });
+
+      printWindow.document.write(`
+            </div>
+            <div class="card-row">
+      `);
+
+      // Add cards to second column (next 5 students)
+      pageStudents.slice(5, 10).forEach(student => {
+        const dob = student.birthday ? new Date(student.birthday).toLocaleDateString("en-GB") : "—";
+        printWindow.document.write(`
+          <div class="student-card">
+            <div class="logo-container">
+              <div class="rounded-logo">
+                <img src="/logo.png" alt="Logo">
+              </div>
+              <div class="institute-name">UNICORN<br>INSTITUTE</div>
+            </div>
+            
+            <div class="card-content">
+              <div class="student-info">
+                <h3>${student.firstName} ${student.surname}</h3>
+                <p>Student ID: <strong>${student.studentId}</strong></p>
+                <p>Grade: ${student.currentGrade || "—"}</p>
+                <p>DOB: ${dob}</p>
+                <p>Guardian: ${student.guardianName || "—"}</p>
+                <p>Guardian Phone: ${student.guardianPhoneNo}</p>
+              </div>
+              
+              <div class="institute-contact">
+                Suruwama Junction, Weliweriya.<br>
+                033 43 32 935 / 077 47 42 935
+              </div>
+              
+              <div class="qr-code" id="qr-${student._id}"></div>
+            </div>
+          </div>
+        `);
+      });
+
+      printWindow.document.write(`
+            </div>
+          </div>
+        </div>
+      `);
+    });
+
+    printWindow.document.write(`
+        </body>
+        <script>
+          // Generate QR codes after page loads
+          window.onload = function() {
+            ${students.map(s => `
+              var qr${s._id} = qrcode(2, 'M');
+              qr${s._id}.addData('${s.studentId}');
+              qr${s._id}.make();
+              document.getElementById('qr-${s._id}').innerHTML = qr${s._id}.createImgTag(2, 4);
+            `).join('\n')}
+            
+            setTimeout(function() {
+              window.print();
+            }, 300);
+          };
+        </script>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+  };
+
   return (
     <div className="container py-4">
       <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Register New Student</h2>
+
+      {/* Header with Print All Button */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h4 className="text-secondary mb-0">📋 Registered Students</h4>
+        <button 
+          className="btn btn-success"
+          onClick={printAllCards}
+          disabled={students.length === 0}
+          title={students.length === 0 ? "No students to print" : "Print all student cards (10 per page)"}
+        >
+          🖨️ Print All Cards ({students.length})
+        </button>
+      </div>
 
       {/* Form */}
       <form onSubmit={handleCreate} className="p-4 bg-body shadow-sm rounded border mb-5">
@@ -915,11 +1248,54 @@ const StudentRegistration = () => {
                     borderRadius: "14px",
                     overflow: "hidden",
                     display: "flex",
+                    position: "relative",
                     boxShadow: "0 10px 30px rgba(0,0,0,0.25)"
                   }}
                 >
-                  {/* LEFT STRIP */}
+                  {/* ROUNDED LOGO AT TOP RIGHT WITH INSTITUTE NAME BELOW */}
                   <div
+                    style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center"
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "45px",
+                        height: "45px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "2px solid rgba(255,255,255,0.3)",
+                        backgroundColor: "rgba(255,255,255,0.1)"
+                      }}
+                    >
+                      <img
+                        src="/logo.png"
+                        alt="Institute Logo"
+                        style={{ 
+                          width: "100%", 
+                          height: "100%",
+                          objectFit: "cover"
+                        }}
+                      />
+                    </div>
+                    <span style={{ 
+                      fontSize: "9px", 
+                      fontWeight: 600, 
+                      textAlign: "center", 
+                      marginTop: "5px",
+                      lineHeight: "1.2"
+                    }}>
+                      UNICORN<br />INSTITUTE
+                    </span>
+                  </div>
+
+                  {/* LEFT STRIP */}
+                  {/* <div
                     style={{
                       width: "70px",
                       background: "rgba(255,255,255,0.12)",
@@ -929,15 +1305,10 @@ const StudentRegistration = () => {
                       justifyContent: "center"
                     }}
                   >
-                    <img
-                      src="/logo.png"
-                      alt="Institute Logo"
-                      style={{ width: "42px", marginBottom: "6px" }}
-                    />
-                    <span style={{ fontSize: "9px", fontWeight: 600, textAlign: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 600, textAlign: "center", marginTop: "10px" }}>
                       UNICORN<br />INSTITUTE
                     </span>
-                  </div>
+                  </div> */}
 
                   {/* RIGHT CONTENT */}
                   <div
@@ -951,7 +1322,7 @@ const StudentRegistration = () => {
                   >
                     <div>
                       <div style={{ fontSize: "15px", fontWeight: 700 }}>
-                        {viewingStudent.name}
+                        {viewingStudent.firstName} {viewingStudent.surname}
                       </div>
 
                       <div style={{ fontSize: "10px", opacity: 0.85, marginTop: "2px" }}>
@@ -976,13 +1347,32 @@ const StudentRegistration = () => {
                       )}
                     </div>
 
-                    {/* QR */}
-                    <div style={{ alignSelf: "flex-end" }}>
+                    {/* INSTITUTE ADDRESS & PHONE AT BOTTOM */}
+                    <div style={{ 
+                      fontSize: "7px", 
+                      opacity: 0.9,
+                      lineHeight: "1.3",
+                      marginTop: "8px"
+                    }}>
+                      <div>Suruwama Junction, Weliweriya.</div>
+                      <div>033 43 32 935 / 077 47 42 935</div>
+                    </div>
+
+                    {/* SQUARED QR CODE - positioned to the right */}
+                    <div style={{ 
+                      position: "absolute",
+                      bottom: "10px",
+                      right: "10px",
+                    }}>
                       <QRCodeSVG
                         value={viewingStudent.studentId}
-                        size={46}
+                        size={50}
                         bgColor="#ffffff"
                         fgColor="#000000"
+                        style={{
+                          border: "2px solid #fff",
+                          borderRadius: "5px" // Ensures it's perfectly square
+                        }}
                       />
                     </div>
                   </div>
@@ -997,7 +1387,7 @@ const StudentRegistration = () => {
                   onClick={async () => {
                     const input = document.getElementById("student-card");
                     const canvas = await html2canvas(input, {
-                      scale: 2.5,
+                      scale: 3,
                       useCORS: true,
                       allowTaint: false,
                       backgroundColor: "#ffffff"
@@ -1011,7 +1401,6 @@ const StudentRegistration = () => {
 
                     pdf.addImage(imgData, "PNG", 0, 0, 85.6, 54);
                     pdf.save(`StudentCard_${viewingStudent.studentId}.pdf`);
-
                   }}
                 >
                   📥 Download PDF
@@ -1036,12 +1425,12 @@ const StudentRegistration = () => {
                           <style>
                             body {
                               margin: 0;
-                              padding: 10mm;
+                              padding: 0;
                               display: flex;
                               justify-content: center;
                               align-items: center;
                               background: white;
-                              font-family: 'Helvetica Neue', Arial, sans-serif;
+                              font-family: 'Inter', Arial, sans-serif;
                             }
                             @media print {
                               @page {
@@ -1054,6 +1443,7 @@ const StudentRegistration = () => {
                               }
                               #student-card {
                                 box-shadow: none !important;
+                                transform: scale(1) !important;
                               }
                             }
                           </style>
@@ -1069,9 +1459,9 @@ const StudentRegistration = () => {
 
                     // Wait for content to load, then print
                     printWindow.onload = () => {
-                      printWindow.print();
-                      // Optionally close after print (not always desired)
-                      // printWindow.close();
+                      setTimeout(() => {
+                        printWindow.print();
+                      }, 250);
                     };
                   }}
                 >
@@ -1082,6 +1472,7 @@ const StudentRegistration = () => {
           </div>
         </div>
       )}
+      
       <div className="container py-4">
         <div className="d-flex justify-content-between align-items-center mb-2">
           <h4 className="text-secondary mb-0">📋 Registered Students</h4>
@@ -1180,8 +1571,8 @@ const StudentRegistration = () => {
                   processedStudents.map((s) => (
                     <tr key={s._id}>
                       <td className="align-middle"><code>{s.studentId}</code></td>
-                      <td className="align-middle">{s.name}</td>
-                      <td className="align-middle">{new Date(s.birthday).toLocaleDateString()}</td>
+                      <td className="align-middle"> {s.firstName} {s.surname}</td>
+                      <td className="align-middle">{new Date(s.birthday).toLocaleDateString("en-GB")}</td>
                       <td className="align-middle">{s.phoneNo}</td>
                       <td className="align-middle">{s.currentGrade || "-"}</td>
                       <td className="align-middle">

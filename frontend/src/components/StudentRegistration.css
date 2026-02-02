@@ -37,3 +37,85 @@
 .chip-scroll::-webkit-scrollbar {
   display: none;
 }
+
+
+/* === CARD SIZE (ID-1 standard) === */
+.student-card-print {
+  width: 85.6mm;
+  height: 54mm;
+  page-break-inside: avoid;
+}
+
+.card-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  position: relative;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.card-logo {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  text-align: center;
+  font-size: 8px;
+}
+
+.card-logo img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.card-content .name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.card-content .meta {
+  font-size: 9px;
+}
+
+.qr {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: #fff;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+/* === PRINT GRID === */
+.print-page {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 cards per row */
+  gap: 6mm;
+  page-break-after: always;
+}
+
+/* === PRINT RULES === */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+}

@@ -947,7 +947,7 @@ const CourseRegistration = () => {
                             }}
                           />
                           <label className="form-check-label flex-grow-1" htmlFor={`student-${student._id}`}>
-                            <strong>{student.name}</strong> ({student.studentId})
+                            <strong>{student.initials} {student.firstname} {(student.surname || student.surname=="") ? (student.surname) : (student.secondName)}</strong> ({student.studentId})
                           </label>
                         </div>
                       ))}
@@ -1015,7 +1015,7 @@ const CourseRegistration = () => {
                               }}
                             />
                             <label className="form-check-label flex-grow-1" htmlFor={`unenroll-${student._id}`}>
-                              <strong>{student.name}</strong> ({student.studentId})
+                              <strong>{student.initials} {student.firstname} {(student.surname || student.surname=="") ? (student.surname) : (student.secondName)}</strong> ({student.studentId})
                               {student.startDate && (
                                 <span className="text-muted ms-2">
                                   From: {new Date(student.startDate).toLocaleDateString()}
