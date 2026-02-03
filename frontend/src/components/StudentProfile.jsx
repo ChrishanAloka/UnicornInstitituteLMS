@@ -417,7 +417,14 @@ const StudentProfile = () => {
       </form>
 
       {/* Recent Students List */}
-      {!student && !loading && (
+      { loading ? (
+        <div className="text-center py-4">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Loading students...</p>
+        </div>
+      ) : !student && !loading && (
         <div className="mb-5">
           <h4 className="mb-3 text-secondary">Recent Students</h4>
           {recentStudents.length === 0 ? (

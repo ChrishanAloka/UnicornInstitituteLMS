@@ -3,6 +3,10 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import * as XLSX from 'xlsx'; // For Excel export
+import jsPDF from 'jspdf'; // For PDF export
+import html2canvas from 'html2canvas'; // For PDF export
+
 
 const CourseRegistration = () => {
   const [courses, setCourses] = useState([]);
@@ -43,6 +47,11 @@ const CourseRegistration = () => {
 
   const [showPastCourses, setShowPastCourses] = useState(false);
 
+  const [showTimetableModal, setShowTimetableModal] = useState(false);
+
+  const [rescheduledSessions, setRescheduledSessions] = useState([]);
+  const [loadingReschedules, setLoadingReschedules] = useState(false);
+
   // Columns for filtering & sorting
   const columns = [
     { label: "Course", key: "courseName" },
@@ -60,6 +69,7 @@ const CourseRegistration = () => {
   useEffect(() => {
     fetchCourses();
     fetchInstructors();
+    fetchRescheduledSessions();
   }, []);
 
   useEffect(() => {
@@ -136,6 +146,23 @@ const CourseRegistration = () => {
       setInstructors(res.data);
     } catch (err) {
       console.warn("Could not load instructors for dropdown");
+    }
+  };
+
+  const fetchRescheduledSessions = async () => {
+    try {
+      setLoadingReschedules(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        "https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setRescheduledSessions(res.data);
+    } catch (err) {
+      console.error("Failed to fetch rescheduled sessions:", err);
+      toast.error("Failed to load rescheduled sessions");
+    } finally {
+      setLoadingReschedules(false);
     }
   };
 
@@ -361,6 +388,8 @@ const CourseRegistration = () => {
     instructorName: c.instructor?.name || "-"
   }));
 
+  console.log("enrisched ",enrichedCourses);
+
   const matchesSearch = (course) => {
     if (!searchText) return true;
     return columns.some(col => {
@@ -434,6 +463,343 @@ const CourseRegistration = () => {
         ? String(aVal).localeCompare(String(bVal))
         : String(bVal).localeCompare(String(aVal));
     });
+
+  // Add this function to get the current week dates
+  const getWeekDates = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust to Monday
+    const monday = new Date(today.setDate(diff));
+    
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      weekDates.push({
+        date: date,
+        day: date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(),
+        formatted: date.toLocaleDateString('en-GB')
+      });
+    }
+    return weekDates;
+  };
+
+  // Add this function to organize courses by day and time
+  const organizeTimetable = () => {
+    const weekDates = getWeekDates();
+    const timetable = {};
+    
+    // Initialize all days
+    weekDates.forEach(({ day }) => {
+      timetable[day] = [];
+    });
+    
+    // Filter active courses for this week
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Create a map of rescheduled sessions by course
+    const rescheduleMap = {};
+    rescheduledSessions.forEach(session => {
+      if (!rescheduleMap[session.course._id]) {
+        rescheduleMap[session.course._id] = [];
+      }
+      rescheduleMap[session.course._id].push(session);
+    });
+    
+    enrichedCourses.forEach(course => {
+      // Check if course is active
+      if (course.courseEndDate) {
+        const endDate = new Date(course.courseEndDate);
+        endDate.setHours(0, 0, 0, 0);
+        if (endDate < today) return;
+      }
+      
+      // Get rescheduled sessions for this course
+      const courseReschedules = rescheduleMap[course._id] || [];
+      
+      // Process each day of the week
+      weekDates.forEach(({ day, date }) => {
+        const dayKey = day.toLowerCase();
+        const courseDayKey = course.dayOfWeek?.toLowerCase();
+        
+        // Check if this is the course's regular day
+        const isRegularDay = courseDayKey === dayKey;
+        
+        if (isRegularDay) {
+          // Check if this date has been rescheduled
+          const originalDateStr = date.toISOString().split('T')[0];
+          const isRescheduled = courseReschedules.some(rs => {
+            const rsOriginalDate = new Date(rs.originalDate).toISOString().split('T')[0];
+            return rsOriginalDate === originalDateStr;
+          });
+          
+          // Only add if NOT rescheduled
+          if (!isRescheduled) {
+            timetable[dayKey].push({
+              ...course,
+              isRescheduled: false,
+              isOriginal: true
+            });
+          }
+        }
+        
+        // Check if any rescheduled session falls on this date
+        courseReschedules.forEach(rs => {
+          const rsNewDate = new Date(rs.newDate);
+          const rsNewDateStr = rsNewDate.toISOString().split('T')[0];
+          const currentDateStr = date.toISOString().split('T')[0];
+          
+          if (rsNewDateStr === currentDateStr) {
+            // Add the rescheduled session
+            timetable[dayKey].push({
+              ...course,
+              isRescheduled: true,
+              isOriginal: false,
+              originalDate: rs.originalDate,
+              rescheduleReason: rs.reason,
+              rescheduleId: rs._id
+            });
+          }
+        });
+      });
+    });
+    
+    // Sort courses by time
+    Object.keys(timetable).forEach(day => {
+      timetable[day].sort((a, b) => {
+        return a.timeFrom.localeCompare(b.timeFrom);
+      });
+    });
+    
+    return { weekDates, timetable };
+  };
+
+  const formatRescheduleInfo = (session) => {
+    if (!session.isRescheduled) return null;
+    
+    const originalDate = new Date(session.originalDate);
+    const formattedOriginal = originalDate.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    });
+    
+    return {
+      originalDate: formattedOriginal,
+      reason: session.rescheduleReason || 'Rescheduled'
+    };
+  };
+
+  // Add this helper function for time formatting
+  const formatTimeRange = (timeFrom, timeTo) => {
+    if (!timeFrom || !timeTo) return '';
+    return `${timeFrom} - ${timeTo}`;
+  };
+
+  // Add this inside your component or in a CSS file
+  const printStyles = `
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #timetable-print, #timetable-print * {
+      visibility: visible;
+    }
+    #timetable-print {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    .no-print {
+      display: none !important;
+    }
+    table {
+      page-break-inside: avoid;
+    }
+    tr {
+      page-break-inside: avoid;
+    }
+    .modal {
+      position: static !important;
+      display: block !important;
+      overflow: visible !important;
+    }
+    .modal-dialog {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .modal-content {
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .modal-header, .modal-footer {
+      display: none !important;
+    }
+    .modal-body {
+      padding: 0 !important;
+    }
+    table {
+      font-size: 10px !important;
+    }
+    th, td {
+      padding: 4px !important;
+    }
+  }
+  `;
+
+  // Add these functions to your component
+
+  // Print Function
+  const handlePrintTimetable = () => {
+    window.print();
+  };
+
+  // Excel Export Function
+  const handleExportExcel = () => {
+    try {
+      const { weekDates, timetable } = organizeTimetable();
+      
+      // Prepare data for Excel
+      const excelData = [];
+      
+      // Header row
+      const headerRow = ['Time'];
+      weekDates.forEach(({ day }) => {
+        headerRow.push(capitalize(day));
+      });
+      excelData.push(headerRow);
+      
+      // Data rows (time slots)
+      for (let i = 0; i < 25; i++) {
+        const hour = Math.floor(8 + i / 2);
+        const minute = i % 2 === 0 ? '00' : '30';
+        const timeSlot = `${hour.toString().padStart(2, '0')}:${minute}`;
+        
+        const row = [timeSlot];
+        
+        weekDates.forEach(({ day }) => {
+          const courses = timetable[day] || [];
+          const overlappingCourses = courses.filter(course => {
+            if (!course.timeFrom || !course.timeTo) return false;
+            
+            const slotTime = new Date();
+            slotTime.setHours(parseInt(timeSlot.split(':')[0]), parseInt(timeSlot.split(':')[1]));
+            
+            const courseStart = new Date();
+            const [startHour, startMin] = course.timeFrom.split(':');
+            courseStart.setHours(parseInt(startHour), parseInt(startMin));
+            
+            const courseEnd = new Date();
+            const [endHour, endMin] = course.timeTo.split(':');
+            courseEnd.setHours(parseInt(endHour), parseInt(endMin));
+            
+            return slotTime >= courseStart && slotTime < courseEnd;
+          });
+          
+          // Join all course names for this slot
+          const courseNames = overlappingCourses.map(c => 
+            `${c.courseName} (${c.instructorName !== '-' ? c.instructorName : 'No Instructor'})`
+          ).join('\n');
+          
+          row.push(courseNames);
+        });
+        
+        excelData.push(row);
+      }
+      
+      // Create worksheet
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+      
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 10 }, // Time column
+        ...Array(7).fill({ wch: 25 }) // Day columns
+      ];
+      
+      // Create workbook and export
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Weekly Timetable");
+      
+      // Generate filename with current week
+      const today = new Date();
+      const fileName = `Weekly_Timetable_${today.toISOString().split('T')[0]}.xlsx`;
+      
+      XLSX.writeFile(wb, fileName);
+      
+      toast.success("Timetable exported to Excel!");
+    } catch (error) {
+      console.error("Excel export error:", error);
+      toast.error("Failed to export Excel file");
+    }
+  };
+
+  // PDF Export Function
+  const handleExportPDF = async () => {
+    try {
+      toast.info("Generating PDF... Please wait");
+      
+      // Get the timetable element
+      const element = document.getElementById('timetable-print');
+      
+      if (!element) {
+        toast.error("Timetable element not found");
+        return;
+      }
+      
+      // Use html2canvas to capture the element
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        onclone: (document) => {
+          // Hide non-print elements in the cloned document
+          const noPrintElements = document.querySelectorAll('.no-print');
+          noPrintElements.forEach(el => {
+            el.style.display = 'none';
+          });
+        }
+      });
+      
+      // Convert canvas to image
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      
+      // Create PDF
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      
+      // Calculate how many pages needed
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage('a4', 'landscape');
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Generate filename
+      const today = new Date();
+      const fileName = `Weekly_Timetable_${today.toISOString().split('T')[0]}.pdf`;
+      
+      // Save PDF
+      pdf.save(fileName);
+      
+      toast.success("Timetable exported to PDF!");
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast.error("Failed to export PDF file");
+    }
+  };
 
   return (
     <div className="container py-4">
@@ -734,6 +1100,12 @@ const CourseRegistration = () => {
               onClick={() => setShowPastCourses(!showPastCourses)}
             >
               {showPastCourses ? '✅ Hide Past Courses' : '🕒 Show Past Courses'}
+            </button>
+            <button
+              className="btn btn-info text-white"
+              onClick={() => setShowTimetableModal(true)}
+            >
+              <i className="bi bi-calendar-week me-1"></i> Weekly Timetable
             </button>
           </div>
         </div>
@@ -1055,7 +1427,268 @@ const CourseRegistration = () => {
           </div>
         )}
       </div>
-
+      {/* Weekly Timetable Modal */}
+      {showTimetableModal && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-xl">
+            <div className="modal-content">
+              <div className="modal-header bg-info text-white">
+                <h5 className="modal-title">
+                  <i className="bi bi-calendar-week me-2"></i>
+                  Weekly Timetable
+                </h5>
+                <button
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowTimetableModal(false)}
+                />
+              </div>
+              <div className="modal-body">
+                {/* Print Styles */}
+                <style>{printStyles}</style>
+                
+                {/* Loading Indicator */}
+                {loadingReschedules && (
+                  <div className="alert alert-info">
+                    <i className="bi bi-hourglass-split me-2"></i>
+                    Loading rescheduled sessions...
+                  </div>
+                )}
+                
+                {/* Timetable Content - Add ID for printing */}
+                <div id="timetable-print">
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-hover">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: '120px', verticalAlign: 'middle' }}>Time</th>
+                          {getWeekDates().map(({ day, formatted }) => (
+                            <th key={day} className="text-center" style={{ minWidth: '180px' }}>
+                              <div className="fw-bold text-capitalize">{day}</div>
+                              <div className="text-muted small">{formatted}</div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* Generate time slots from 8:00 AM to 8:00 PM */}
+                        {Array.from({ length: 25 }, (_, i) => {
+                          const hour = Math.floor(8 + i / 2);
+                          const minute = i % 2 === 0 ? '00' : '30';
+                          const timeSlot = `${hour.toString().padStart(2, '0')}:${minute}`;
+                          
+                          return (
+                            <tr key={timeSlot}>
+                              <td className="fw-semibold bg-light">{timeSlot}</td>
+                              {getWeekDates().map(({ day }) => {
+                                const { timetable } = organizeTimetable();
+                                const courses = timetable[day] || [];
+                                
+                                // Find courses that overlap with this time slot
+                                const overlappingCourses = courses.filter(course => {
+                                  if (!course.timeFrom || !course.timeTo) return false;
+                                  
+                                  const slotTime = new Date();
+                                  slotTime.setHours(parseInt(timeSlot.split(':')[0]), parseInt(timeSlot.split(':')[1]));
+                                  
+                                  const courseStart = new Date();
+                                  const [startHour, startMin] = course.timeFrom.split(':');
+                                  courseStart.setHours(parseInt(startHour), parseInt(startMin));
+                                  
+                                  const courseEnd = new Date();
+                                  const [endHour, endMin] = course.timeTo.split(':');
+                                  courseEnd.setHours(parseInt(endHour), parseInt(endMin));
+                                  
+                                  // Check if time slot is within course duration
+                                  return slotTime >= courseStart && slotTime < courseEnd;
+                                });
+                                
+                                return (
+                                  <td key={day} className="align-middle" style={{ backgroundColor: overlappingCourses.length > 0 ? '#e3f2fd' : 'inherit' }}>
+                                    {overlappingCourses.map((course, idx) => {
+                                      const rescheduleInfo = formatRescheduleInfo(course);
+                                      
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`p-2 mb-2 rounded border ${
+                                            course.isRescheduled 
+                                              ? 'bg-warning text-dark border-warning' 
+                                              : 'bg-primary text-white border-primary'
+                                          }`}
+                                          style={{ 
+                                            cursor: 'pointer',
+                                            position: 'relative',
+                                            borderLeftWidth: '4px',
+                                            borderLeftStyle: 'solid'
+                                          }}
+                                          onClick={() => openEditModal(course)}
+                                        >
+                                          {/* Reschedule Badge */}
+                                          {course.isRescheduled && (
+                                            <div className="position-absolute top-0 end-0 translate-middle badge bg-danger">
+                                              <i className="bi bi-calendar2-x"></i>
+                                            </div>
+                                          )}
+                                          
+                                          <div className="fw-bold">
+                                            {course.courseName}
+                                            {course.isRescheduled && (
+                                              <span className="ms-2">
+                                                <i className="bi bi-arrow-right-circle text-danger"></i>
+                                              </span>
+                                            )}
+                                          </div>
+                                          
+                                          <div className="small mt-1">
+                                            <i className="bi bi-clock me-1"></i>
+                                            {formatTimeRange(course.timeFrom, course.timeTo)}
+                                          </div>
+                                          
+                                          <div className="small mt-1">
+                                            <i className="bi bi-person-circle me-1"></i>
+                                            {course.instructorName !== '-' ? course.instructorName : 'No Instructor'}
+                                          </div>
+                                          
+                                          {/* Show original date for rescheduled sessions */}
+                                          {course.isRescheduled && rescheduleInfo && (
+                                            <div className="small mt-1 text-dark">
+                                              <i className="bi bi-calendar2-minus me-1"></i>
+                                              Was: {rescheduleInfo.originalDate}
+                                            </div>
+                                          )}
+                                          
+                                          {/* Show reason if available */}
+                                          {course.isRescheduled && course.rescheduleReason && (
+                                            <div className="small mt-1 text-dark">
+                                              <i className="bi bi-info-circle me-1"></i>
+                                              {course.rescheduleReason}
+                                            </div>
+                                          )}
+                                          
+                                          {course.courseType && (
+                                            <div className="mt-2">
+                                              <span className={`badge ${
+                                                course.isRescheduled ? 'bg-light text-warning' : 'bg-light text-primary'
+                                              }`}>
+                                                {capitalize(course.courseType)}
+                                                {course.isRescheduled && ' (Rescheduled)'}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Legend */}
+                  <div className="mt-4 p-3 bg-light rounded">
+                    <h6 className="mb-3">Legend:</h6>
+                    <div className="d-flex flex-wrap gap-4">
+                      <div className="d-flex align-items-center">
+                        <div className="bg-primary text-white p-2 rounded me-2" style={{ width: '20px', height: '20px' }}></div>
+                        <span>Regular Session</span>
+                      </div>
+                      <div className="d-flex align-items-center">
+                        <div className="bg-warning text-dark p-2 rounded me-2" style={{ width: '20px', height: '20px' }}></div>
+                        <span>Rescheduled Session</span>
+                      </div>
+                      <div className="d-flex align-items-center">
+                        <div className="bg-light border p-2 rounded me-2" style={{ width: '20px', height: '20px' }}></div>
+                        <span>No Session</span>
+                      </div>
+                      <div className="d-flex align-items-center">
+                        <span className="badge bg-danger me-2">
+                          <i className="bi bi-calendar2-x"></i>
+                        </span>
+                        <span>Reschedule Indicator</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Rescheduled Sessions Summary */}
+                  {rescheduledSessions.length > 0 && (
+                    <div className="mt-4 p-3 bg-info bg-opacity-10 rounded border border-info">
+                      <h6 className="mb-3">
+                        <i className="bi bi-calendar2-week me-2"></i>
+                        Rescheduled Sessions This Week
+                      </h6>
+                      <div className="table-responsive">
+                        <table className="table table-sm table-bordered">
+                          <thead className="table-light">
+                            <tr>
+                              <th>Course</th>
+                              <th>Original Date</th>
+                              <th>New Date</th>
+                              <th>Reason</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rescheduledSessions
+                              .filter(rs => {
+                                const newDate = new Date(rs.newDate);
+                                const weekStart = getWeekDates()[0].date;
+                                const weekEnd = getWeekDates()[6].date;
+                                return newDate >= weekStart && newDate <= weekEnd;
+                              })
+                              .map((rs, idx) => (
+                                <tr key={idx}>
+                                  <td className="fw-semibold">{rs.course?.courseName || 'Unknown'}</td>
+                                  <td>{new Date(rs.originalDate).toLocaleDateString('en-GB')}</td>
+                                  <td className="text-success fw-bold">
+                                    {new Date(rs.newDate).toLocaleDateString('en-GB')}
+                                  </td>
+                                  <td>{rs.reason || '—'}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary no-print"
+                  onClick={() => setShowTimetableModal(false)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary no-print"
+                  onClick={handlePrintTimetable}
+                >
+                  <i className="bi bi-printer me-1"></i> Print
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success no-print"
+                  onClick={handleExportExcel}
+                >
+                  <i className="bi bi-file-earmark-excel me-1"></i> Excel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger no-print"
+                  onClick={handleExportPDF}
+                >
+                  <i className="bi bi-file-earmark-pdf me-1"></i> PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <ToastContainer />
     </div>
   );
