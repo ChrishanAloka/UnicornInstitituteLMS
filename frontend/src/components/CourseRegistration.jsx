@@ -52,6 +52,9 @@ const CourseRegistration = () => {
   const [rescheduledSessions, setRescheduledSessions] = useState([]);
   const [loadingReschedules, setLoadingReschedules] = useState(false);
 
+  const [showCourseDetailsModal, setShowCourseDetailsModal] = useState(false);
+  const [selectedCourseDetails, setSelectedCourseDetails] = useState(null);
+
   // Columns for filtering & sorting
   const columns = [
     { label: "Course", key: "courseName" },
@@ -666,15 +669,25 @@ const CourseRegistration = () => {
       // Prepare data for Excel
       const excelData = [];
       
+      // Title
+      excelData.push([`WEEKLY TIMETABLE - ${new Date().toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })}`]);
+      excelData.push([`Time Range: 8:00 AM - 9:00 PM`]);
+      excelData.push([]);
+      
       // Header row
       const headerRow = ['Time'];
-      weekDates.forEach(({ day }) => {
-        headerRow.push(capitalize(day));
+      weekDates.forEach(({ day, formatted }) => {
+        headerRow.push(`${capitalize(day)}\n${formatted}`);
       });
       excelData.push(headerRow);
       
-      // Data rows (time slots)
-      for (let i = 0; i < 25; i++) {
+      // Data rows (time slots from 8 AM to 9 PM)
+      for (let i = 0; i < 27; i++) {
         const hour = Math.floor(8 + i / 2);
         const minute = i % 2 === 0 ? '00' : '30';
         const timeSlot = `${hour.toString().padStart(2, '0')}:${minute}`;
@@ -700,25 +713,60 @@ const CourseRegistration = () => {
             return slotTime >= courseStart && slotTime < courseEnd;
           });
           
-          // Join all course names for this slot
-          const courseNames = overlappingCourses.map(c => 
-            `${c.courseName} (${c.instructorName !== '-' ? c.instructorName : 'No Instructor'})`
-          ).join('\n');
+          // Show only course names with reschedule indicator
+          const courseNames = overlappingCourses.map(c => {
+            const base = c.courseName;
+            if (c.isRescheduled) {
+              return `⚠️ ${base} (Rescheduled)`;
+            }
+            return base;
+          }).join('\n');
           
-          row.push(courseNames);
+          row.push(courseNames || '');
         });
         
         excelData.push(row);
       }
+      
+      // Add rescheduled sessions summary
+      excelData.push([]);
+      excelData.push(['RESCHEDULED SESSIONS THIS WEEK']);
+      excelData.push(['Course', 'Original Date', 'New Date', 'Reason']);
+      
+      rescheduledSessions
+        .filter(rs => {
+          const newDate = new Date(rs.newDate);
+          const weekStart = getWeekDates()[0].date;
+          const weekEnd = getWeekDates()[6].date;
+          return newDate >= weekStart && newDate <= weekEnd;
+        })
+        .forEach(rs => {
+          excelData.push([
+            rs.course?.courseName || 'Unknown',
+            new Date(rs.originalDate).toLocaleDateString('en-GB'),
+            new Date(rs.newDate).toLocaleDateString('en-GB'),
+            rs.reason || ''
+          ]);
+        });
       
       // Create worksheet
       const ws = XLSX.utils.aoa_to_sheet(excelData);
       
       // Set column widths
       ws['!cols'] = [
-        { wch: 10 }, // Time column
-        ...Array(7).fill({ wch: 25 }) // Day columns
+        { wch: 12 }, // Time column
+        ...Array(7).fill({ wch: 20 }) // Day columns
       ];
+      
+      // Style the header
+      const headerCell = ws['A4'];
+      if (headerCell) {
+        headerCell.s = {
+          font: { bold: true, sz: 12 },
+          fill: { fgColor: { rgb: "D3D3D3" } },
+          alignment: { horizontal: "center", vertical: "center", wrapText: true }
+        };
+      }
       
       // Create workbook and export
       const wb = XLSX.utils.book_new();
@@ -799,6 +847,11 @@ const CourseRegistration = () => {
       console.error("PDF export error:", error);
       toast.error("Failed to export PDF file");
     }
+  };
+
+  const handleCourseClick = (course) => {
+    setSelectedCourseDetails(course);
+    setShowCourseDetailsModal(true);
   };
 
   return (
@@ -1457,8 +1510,8 @@ const CourseRegistration = () => {
                 {/* Timetable Content - Add ID for printing */}
                 <div id="timetable-print">
                   <div className="table-responsive">
-                    <table className="table table-bordered table-hover">
-                      <thead className="table-light">
+                    <table className="table table-bordered table-hover table-striped">
+                      <thead>
                         <tr>
                           <th style={{ width: '120px', verticalAlign: 'middle' }}>Time</th>
                           {getWeekDates().map(({ day, formatted }) => (
@@ -1471,14 +1524,14 @@ const CourseRegistration = () => {
                       </thead>
                       <tbody>
                         {/* Generate time slots from 8:00 AM to 8:00 PM */}
-                        {Array.from({ length: 25 }, (_, i) => {
+                        {Array.from({ length: 27 }, (_, i) => {
                           const hour = Math.floor(8 + i / 2);
                           const minute = i % 2 === 0 ? '00' : '30';
                           const timeSlot = `${hour.toString().padStart(2, '0')}:${minute}`;
                           
                           return (
                             <tr key={timeSlot}>
-                              <td className="fw-semibold bg-light">{timeSlot}</td>
+                              <td className="fw-semibold" style={{ fontSize: '0.85rem', padding: '8px' }}>{timeSlot}</td>
                               {getWeekDates().map(({ day }) => {
                                 const { timetable } = organizeTimetable();
                                 const courses = timetable[day] || [];
@@ -1499,73 +1552,82 @@ const CourseRegistration = () => {
                                   courseEnd.setHours(parseInt(endHour), parseInt(endMin));
                                   
                                   // Check if time slot is within course duration
-                                  return slotTime >= courseStart && slotTime < courseEnd;
+                                  return slotTime >= courseStart && slotTime <= courseEnd;
                                 });
                                 
                                 return (
-                                  <td key={day} className="align-middle" style={{ backgroundColor: overlappingCourses.length > 0 ? '#e3f2fd' : 'inherit' }}>
+                                  <td key={day} className="align-middle p-1" style={{ backgroundColor: overlappingCourses.length > 0 ? 'inherit' : 'inherit', minHeight: '60px' }}>
                                     {overlappingCourses.map((course, idx) => {
                                       const rescheduleInfo = formatRescheduleInfo(course);
                                       
                                       return (
                                         <div
                                           key={idx}
-                                          className={`p-2 mb-2 rounded border ${
+                                          className={`p-2 mb-2 rounded border cursor-pointer ${
                                             course.isRescheduled 
                                               ? 'bg-warning text-dark border-warning' 
                                               : 'bg-primary text-white border-primary'
                                           }`}
                                           style={{ 
-                                            cursor: 'pointer',
-                                            position: 'relative',
-                                            borderLeftWidth: '4px',
-                                            borderLeftStyle: 'solid'
+                                            fontSize: '0.8rem',
+                                            transition: 'all 0.2s',
+                                            border: '2px solid',
+                                            borderColor: course.isRescheduled ? '#ffc107' : '#0d6efd'
                                           }}
-                                          onClick={() => openEditModal(course)}
+                                          onClick={() => handleCourseClick(course)}
+                                          title="Click for details"
                                         >
                                           {/* Reschedule Badge */}
                                           {course.isRescheduled && (
-                                            <div className="position-absolute top-0 end-0 translate-middle badge bg-danger">
+                                            <span className="me-1">
                                               <i className="bi bi-calendar2-x"></i>
-                                            </div>
+                                            </span>
+                                          )}
+
+                                          <span className="fw-bold">{course.courseName}</span>
+
+                                          {course.isRescheduled && (
+                                            <span className="ms-1 badge bg-danger" style={{ fontSize: '0.6rem' }}>
+                                              Rescheduled
+                                            </span>
                                           )}
                                           
-                                          <div className="fw-bold">
+                                          {/* <div className="fw-bold">
                                             {course.courseName}
                                             {course.isRescheduled && (
                                               <span className="ms-2">
                                                 <i className="bi bi-arrow-right-circle text-danger"></i>
                                               </span>
                                             )}
-                                          </div>
+                                          </div> */}
                                           
-                                          <div className="small mt-1">
+                                          {/* <div className="small mt-1">
                                             <i className="bi bi-clock me-1"></i>
                                             {formatTimeRange(course.timeFrom, course.timeTo)}
-                                          </div>
+                                          </div> */}
                                           
-                                          <div className="small mt-1">
+                                          {/* <div className="small mt-1">
                                             <i className="bi bi-person-circle me-1"></i>
                                             {course.instructorName !== '-' ? course.instructorName : 'No Instructor'}
-                                          </div>
+                                          </div> */}
                                           
                                           {/* Show original date for rescheduled sessions */}
-                                          {course.isRescheduled && rescheduleInfo && (
+                                          {/* {course.isRescheduled && rescheduleInfo && (
                                             <div className="small mt-1 text-dark">
                                               <i className="bi bi-calendar2-minus me-1"></i>
                                               Was: {rescheduleInfo.originalDate}
                                             </div>
-                                          )}
+                                          )} */}
                                           
                                           {/* Show reason if available */}
-                                          {course.isRescheduled && course.rescheduleReason && (
+                                          {/* {course.isRescheduled && course.rescheduleReason && (
                                             <div className="small mt-1 text-dark">
                                               <i className="bi bi-info-circle me-1"></i>
                                               {course.rescheduleReason}
                                             </div>
-                                          )}
+                                          )} */}
                                           
-                                          {course.courseType && (
+                                          {/* {course.courseType && (
                                             <div className="mt-2">
                                               <span className={`badge ${
                                                 course.isRescheduled ? 'bg-light text-warning' : 'bg-light text-primary'
@@ -1574,7 +1636,7 @@ const CourseRegistration = () => {
                                                 {course.isRescheduled && ' (Rescheduled)'}
                                               </span>
                                             </div>
-                                          )}
+                                          )} */}
                                         </div>
                                       );
                                     })}
@@ -1589,7 +1651,7 @@ const CourseRegistration = () => {
                   </div>
                   
                   {/* Legend */}
-                  <div className="mt-4 p-3 bg-light rounded">
+                  <div className="mt-4 p-3 rounded">
                     <h6 className="mb-3">Legend:</h6>
                     <div className="d-flex flex-wrap gap-4">
                       <div className="d-flex align-items-center">
@@ -1683,6 +1745,224 @@ const CourseRegistration = () => {
                   onClick={handleExportPDF}
                 >
                   <i className="bi bi-file-earmark-pdf me-1"></i> PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Course Details Modal */}
+      {showCourseDetailsModal && selectedCourseDetails && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className={`modal-header ${
+                selectedCourseDetails.isRescheduled ? 'bg-warning text-dark' : 'bg-primary text-white'
+              }`}>
+                <h5 className="modal-title">
+                  <i className={`bi ${selectedCourseDetails.isRescheduled ? 'bi-calendar2-week' : 'bi-calendar2-event'} me-2`}></i>
+                  {selectedCourseDetails.courseName}
+                </h5>
+                <button
+                  className={`btn-close ${selectedCourseDetails.isRescheduled ? '' : 'btn-close-white'}`}
+                  onClick={() => {
+                    setShowCourseDetailsModal(false);
+                    setSelectedCourseDetails(null);
+                  }}
+                />
+              </div>
+              <div className="modal-body">
+                <div className="row">
+                  {/* Left Column - Main Info */}
+                  <div className="col-md-7">
+                    <div className="mb-4">
+                      <h6 className="text-muted mb-3">
+                        <i className="bi bi-info-circle me-2"></i>
+                        Course Information
+                      </h6>
+                      <div className="d-flex mb-3">
+                        <span className="text-muted" style={{ minWidth: '100px' }}>Course Type:</span>
+                        <span className="fw-semibold">
+                          <span className={`badge ${
+                            selectedCourseDetails.isRescheduled ? 'bg-warning text-dark' : 'bg-primary'
+                          }`}>
+                            {capitalize(selectedCourseDetails.courseType)}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="d-flex mb-3">
+                        <span className="text-muted" style={{ minWidth: '100px' }}>Schedule:</span>
+                        <span className="fw-semibold text-primary">
+                          <i className="bi bi-clock me-1"></i>
+                          {formatTimeRange(selectedCourseDetails.timeFrom, selectedCourseDetails.timeTo)}
+                        </span>
+                      </div>
+                      <div className="d-flex mb-3">
+                        <span className="text-muted" style={{ minWidth: '100px' }}>Regular Day:</span>
+                        <span className="fw-semibold">
+                          <i className="bi bi-calendar-day me-1"></i>
+                          {capitalize(selectedCourseDetails.dayOfWeek)}
+                        </span>
+                      </div>
+                      <div className="d-flex mb-3">
+                        <span className="text-muted" style={{ minWidth: '100px' }}>Instructor:</span>
+                        <span className="fw-semibold">
+                          <i className="bi bi-person-circle me-1"></i>
+                          {selectedCourseDetails.instructorName !== '-' 
+                            ? selectedCourseDetails.instructorName 
+                            : <span className="text-muted">Not assigned</span>}
+                        </span>
+                      </div>
+                      {selectedCourseDetails.description && (
+                        <div className="d-flex mb-3">
+                          <span className="text-muted" style={{ minWidth: '100px' }}>Description:</span>
+                          <span>{selectedCourseDetails.description}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Reschedule Information */}
+                    {selectedCourseDetails.isRescheduled && (
+                      <div className="alert alert-warning">
+                        <h6 className="mb-3">
+                          <i className="bi bi-calendar2-x me-2"></i>
+                          Reschedule Information
+                        </h6>
+                        <div className="d-flex mb-2">
+                          <span className="text-muted" style={{ minWidth: '120px' }}>Original Date:</span>
+                          <span className="fw-bold text-danger">
+                            <i className="bi bi-calendar2-minus me-1"></i>
+                            {new Date(selectedCourseDetails.originalDate).toLocaleDateString('en-GB', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <div className="d-flex mb-2">
+                          <span className="text-muted" style={{ minWidth: '120px' }}>Rescheduled To:</span>
+                          <span className="fw-bold text-success">
+                            <i className="bi bi-calendar2-plus me-1"></i>
+                            {new Date(selectedCourseDetails.newDate || new Date()).toLocaleDateString('en-GB', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        {selectedCourseDetails.rescheduleReason && (
+                          <div className="d-flex">
+                            <span className="text-muted" style={{ minWidth: '120px' }}>Reason:</span>
+                            <span className="fw-semibold">{selectedCourseDetails.rescheduleReason}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Right Column - Additional Info */}
+                  <div className="col-md-5">
+                    <div className="mb-4">
+                      <h6 className="text-muted mb-3">
+                        <i className="bi bi-cash-coin me-2"></i>
+                        Financial Information
+                      </h6>
+                      <div className="d-flex mb-2">
+                        <span className="text-muted" style={{ minWidth: '100px' }}>Course Fees:</span>
+                        <span className="fw-bold text-success">
+                          {selectedCourseDetails.courseFees 
+                            ? `Rs. ${selectedCourseDetails.courseFees.toLocaleString()}`
+                            : <span className="text-muted">Not specified</span>}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <h6 className="text-muted mb-3">
+                        <i className="bi bi-calendar-range me-2"></i>
+                        Course Duration
+                      </h6>
+                      <div className="d-flex mb-2">
+                        <span className="text-muted" style={{ minWidth: '100px' }}>Start Date:</span>
+                        <span className="fw-semibold">
+                          {selectedCourseDetails.courseStartDate
+                            ? new Date(selectedCourseDetails.courseStartDate).toLocaleDateString('en-GB')
+                            : <span className="text-muted">Not specified</span>}
+                        </span>
+                      </div>
+                      <div className="d-flex mb-2">
+                        <span className="text-muted" style={{ minWidth: '100px' }}>End Date:</span>
+                        <span className="fw-semibold">
+                          {selectedCourseDetails.courseEndDate
+                            ? new Date(selectedCourseDetails.courseEndDate).toLocaleDateString('en-GB')
+                            : <span className="text-muted">Ongoing</span>}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    {/* <div className="mb-4">
+                      <h6 className="text-muted mb-3">
+                        <i className="bi bi-gear me-2"></i>
+                        Actions
+                      </h6>
+                      <div className="d-grid gap-2">
+                        <button
+                          className="btn btn-outline-primary"
+                          onClick={() => {
+                            openEditModal(selectedCourseDetails);
+                            setShowCourseDetailsModal(false);
+                          }}
+                        >
+                          <i className="bi bi-pencil-square me-1"></i>
+                          Edit Course
+                        </button>
+                        {selectedCourseDetails.isRescheduled && (
+                          <button
+                            className="btn btn-outline-warning"
+                            onClick={() => {
+                              // You can add functionality to edit reschedule here
+                              toast.info("Reschedule editing coming soon!");
+                            }}
+                          >
+                            <i className="bi bi-calendar2-week me-1"></i>
+                            Edit Reschedule
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => {
+                            // Open attendance or other related features
+                            toast.info("More actions coming soon!");
+                          }}
+                        >
+                          <i className="bi bi-people me-1"></i>
+                          View Students
+                        </button>
+                      </div>
+                    </div> */}
+                  </div>
+                </div>
+                
+                {/* Course ID (for reference) */}
+                <div className="mt-4 pt-3 border-top">
+                  <small className="text-muted">
+                    Course ID: {selectedCourseDetails._id}
+                  </small>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowCourseDetailsModal(false);
+                    setSelectedCourseDetails(null);
+                  }}
+                >
+                  Close
                 </button>
               </div>
             </div>
