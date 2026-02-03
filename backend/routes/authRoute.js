@@ -19,6 +19,10 @@ const instructorController = require('../controllers/instructorController');
 const attendanceController = require("../controllers/attendanceController");
 const rescheduledSessionController = require("../controllers/rescheduledSessionController");
 
+// Import controllers
+const extraSessionController = require('../controllers/extraSessionController');
+const absentDayController = require('../controllers/absentDayController');
+
 // Public routes
 router.post("/signup", signup);
 router.post("/login", login);
@@ -73,6 +77,10 @@ router.get('/course/:id/students', authMiddleware(["admin", "user"]), courseCont
 
 
 // Attendance Routes
+router.get('/attendance/track', authMiddleware(["admin", "user"]), attendanceController.trackAttendance);
+router.get('/attendance/student/:studentId', authMiddleware(["admin", "user"]), attendanceController.getStudentAttendance);
+router.get('/attendance/course/:courseId', authMiddleware(["admin", "user"]), attendanceController.getCourseAttendance);
+router.get('/attendance/details', authMiddleware(["admin", "user"]), attendanceController.getAttendanceDetails);
 router.post("/attendance/mark", authMiddleware(["admin", "user"]), attendanceController.markAttendance);
 router.get("/attendance", authMiddleware(["admin", "user"]), attendanceController.getStudentWithCourses);
 
@@ -80,5 +88,15 @@ router.get("/attendance", authMiddleware(["admin", "user"]), attendanceControlle
 router.post('/sessions/reschedule', authMiddleware(["admin", "user"]), rescheduledSessionController.createRescheduledSession);
 router.get('/sessions/reschedule', authMiddleware(["admin", "user"]), rescheduledSessionController.getRescheduledSessions);
 router.delete('/sessions/reschedule/:id', authMiddleware(["admin", "user"]), rescheduledSessionController.deleteRescheduledSession);
+
+// Extra Session Routes
+router.post('/sessions/extra', authMiddleware(["admin", "user"]), extraSessionController.createExtraSession);
+router.get('/sessions/extra', authMiddleware(["admin", "user"]), extraSessionController.getExtraSessions);
+router.delete('/sessions/extra/:id', authMiddleware(["admin", "user"]), extraSessionController.deleteExtraSession);
+
+// Absent Day Routes
+router.post('/sessions/absent', authMiddleware(["admin", "user"]), absentDayController.createAbsentDay);
+router.get('/sessions/absent', authMiddleware(["admin", "user"]), absentDayController.getAbsentDays);
+router.delete('/sessions/absent/:id', authMiddleware(["admin", "user"]), absentDayController.deleteAbsentDay);
 
 module.exports = router;

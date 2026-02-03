@@ -89,6 +89,8 @@ import StudentProfile from "./components/StudentProfile";
 import TrackPayment from "./components/TrackPayment";
 import TrackAttendance from "./components/TrackAttendance";
 import RescheduleCourseSession from "./components/RescheduleCourseSession";
+import AddExtraSession from "./components/AddExtraSession";
+import MarkAbsentDay from "./components/MarkAbsentDay";
 
 
 <Route path="/unauthorized" element={<Unauthorized />} />
@@ -142,6 +144,8 @@ function App() {
             <Route path="/user/reschedule-courseSession" element={<RescheduleCourseSession />} />
             <Route path="/user/attendance" element={<Attendance />} />
             <Route path="/user/student-profile" element={<StudentProfile />} />
+            <Route path="/user/addextra" element={<AddExtraSession />} />
+            <Route path="/user/addabsent" element={<MarkAbsentDay />} />
             <Route path="/user/track-payment" element={<TrackPayment />} />
             <Route path="/user/track-attendance" element={<TrackAttendance />} />
             <Route path="/user/track-attendance" element={<RescheduleCourseSession />} />

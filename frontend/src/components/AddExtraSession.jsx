@@ -5,29 +5,28 @@ import 'react-toastify/dist/ReactToastify.css';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-const RescheduleCourseSession = () => {
+const AddExtraSession = () => {
     const [courses, setCourses] = useState([]);
-    const [sessions, setSessions] = useState([]);
+    const [extraSessions, setExtraSessions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         courseId: '',
-        originalDate: '',
-        newDate: '',
-        newStartTime: '', // ✅ NEW
-        newEndTime: '',   // ✅ NEW
+        extraDate: '',
+        startTime: '',
+        endTime: '',
         reason: ''
     });
     const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
     const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
-    // Fetch courses and sessions on mount
+    // Fetch courses and extra sessions on mount
     useEffect(() => {
         fetchCourses();
-        fetchSessions();
+        fetchExtraSessions();
     }, []);
 
     useEffect(() => {
-        fetchSessions();
+        fetchExtraSessions();
     }, [filterMonth, filterYear]);
 
     const fetchCourses = async () => {
@@ -42,31 +41,31 @@ const RescheduleCourseSession = () => {
         }
     };
 
-    const fetchSessions = async () => {
+    const fetchExtraSessions = async () => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(
-                `https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule?month=${filterMonth}&year=${filterYear}`,
+                `https://unicorninstititutelms.onrender.com/api/auth/sessions/extra?month=${filterMonth}&year=${filterYear}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            setSessions(res.data);
+            setExtraSessions(res.data);
         } catch (err) {
-            toast.error('Failed to load rescheduled sessions');
+            toast.error('Failed to load extra sessions');
         }
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         
-        // ✅ Auto-fill times when course is selected
+        // Auto-fill times when course is selected
         if (name === 'courseId') {
             const course = courses.find(c => c._id === value);
             if (course) {
                 setFormData(prev => ({
                     ...prev,
                     courseId: value,
-                    newStartTime: prev.courseId !== value ? course.timeFrom || '09:00' : prev.newStartTime,
-                    newEndTime: prev.courseId !== value ? course.timeTo || '10:30' : prev.newEndTime
+                    startTime: prev.courseId !== value ? course.startTime || '09:00' : prev.startTime,
+                    endTime: prev.courseId !== value ? course.endTime || '10:30' : prev.endTime
                 }));
             } else {
                 setFormData(prev => ({ ...prev, courseId: value }));
@@ -79,29 +78,14 @@ const RescheduleCourseSession = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const { courseId, originalDate, newDate, newStartTime, newEndTime } = formData;
+        const { courseId, extraDate, startTime, endTime } = formData;
         
-        if (!courseId || !originalDate || !newDate || !newStartTime || !newEndTime) {
+        if (!courseId || !extraDate || !startTime || !endTime) {
             toast.error('Please fill all required fields');
             return;
         }
 
-        // 🔹 Validate originalDate matches course day
-        const courseDay = getCourseDay(courseId);
-        const selectedDay = getDayOfWeek(originalDate);
-
-        if (courseDay && selectedDay !== courseDay) {
-            toast.error(`Original date must be a ${courseDay.charAt(0).toUpperCase() + courseDay.slice(1)}!`);
-            return;
-        }
-
-        if (new Date(newDate) <= new Date(originalDate)) {
-            toast.error('New date must be after the original date');
-            return;
-        }
-
-        // ✅ Validate time order
-        if (newStartTime >= newEndTime) {
+        if (startTime >= endTime) {
             toast.error('Start time must be before end time');
             return;
         }
@@ -109,36 +93,35 @@ const RescheduleCourseSession = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.post(
-                'https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule',
+                'https://unicorninstititutelms.onrender.com/api/auth/sessions/extra',
                 formData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            toast.success('Session rescheduled successfully!');
+            toast.success('Extra session added successfully!');
             setFormData({ 
                 courseId: '', 
-                originalDate: '', 
-                newDate: '', 
-                newStartTime: '', // ✅ Reset
-                newEndTime: '',   // ✅ Reset
+                extraDate: '', 
+                startTime: '', 
+                endTime: '', 
                 reason: '' 
             });
-            fetchSessions(); // refresh
+            fetchExtraSessions(); // refresh
         } catch (err) {
-            const msg = err.response?.data?.error || 'Failed to reschedule';
+            const msg = err.response?.data?.error || 'Failed to add extra session';
             toast.error(msg);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Remove this rescheduled session?')) return;
+        if (!window.confirm('Remove this extra session?')) return;
         try {
             const token = localStorage.getItem('token');
             await axios.delete(
-                `https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule/${id}`,
+                `https://unicorninstititutelms.onrender.com/api/auth/sessions/extra/${id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success('Removed');
-            fetchSessions();
+            fetchExtraSessions();
         } catch (err) {
             toast.error('Failed to delete');
         }
@@ -150,7 +133,8 @@ const RescheduleCourseSession = () => {
 
     const formatTime = (timeStr) => {
         if (!timeStr) return '';
-        return timeStr; // Already in HH:mm format
+        const [hours, minutes] = timeStr.split(':');
+        return `${hours}:${minutes}`;
     };
 
     const getCourseName = (courseId) => {
@@ -158,43 +142,17 @@ const RescheduleCourseSession = () => {
         return course ? course.courseName : '—';
     };
 
-    const getDayOfWeek = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    };
-
-    const getCourseDay = (courseId) => {
-        const course = courses.find(c => c._id === courseId);
-        return course ? course.dayOfWeek?.toLowerCase() : null;
-    };
-
-    const getCourseDayIndex = (courseId) => {
-        const course = courses.find(c => c._id === courseId);
-        if (!course) return null;
-        const dayMap = {
-            sunday: 0,
-            monday: 1,
-            tuesday: 2,
-            wednesday: 3,
-            thursday: 4,
-            friday: 5,
-            saturday: 6
-        };
-        return dayMap[course.dayOfWeek.toLowerCase()];
-    };
-
-    const getCourseTime = (courseId) => {
-        const course = courses.find(c => c._id === courseId);
-        return course ? { start: course.timeFrom, end: course.timeTo } : { start: '', end: '' };
+    const getCourseDetails = (courseId) => {
+        return courses.find(c => c._id === courseId) || {};
     };
 
     return (
         <div className="container py-4">
-            <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">🔄 Reschedule Course Sessions</h2>
+            <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">➕ Add Extra Course Sessions</h2>
 
             {/* Form */}
             <div className="card p-4 mb-5 shadow-sm">
-                <h5 className="mb-3">Add New Rescheduled Session</h5>
+                <h5 className="mb-3">Add New Extra Session</h5>
                 <form onSubmit={handleSubmit}>
                     <div className="row g-3">
                         <div className="col-md-6">
@@ -215,21 +173,17 @@ const RescheduleCourseSession = () => {
                             </select>
                         </div>
                         <div className="col-md-6">
-                            <label className="form-label fw-semibold">Original Date *</label>
+                            <label className="form-label fw-semibold">Session Date *</label>
                             <div className="position-relative">
                                 <DatePicker
-                                    selected={formData.originalDate ? new Date(formData.originalDate) : null}
+                                    selected={formData.extraDate ? new Date(formData.extraDate) : null}
                                     onChange={(date) =>
                                         setFormData({
                                             ...formData,
-                                            originalDate: date ? date.toISOString().split('T')[0] : '',
+                                            extraDate: date ? date.toISOString().split('T')[0] : '',
                                         })
                                     }
-                                    filterDate={(date) => {
-                                        const allowedDay = getCourseDayIndex(formData.courseId);
-                                        return allowedDay !== null ? date.getDay() === allowedDay : true;
-                                    }}
-                                    placeholderText="Select a valid course day"
+                                    placeholderText="Select date"
                                     className="form-control shadow-sm"
                                     dateFormat="yyyy-MM-dd"
                                     required
@@ -237,23 +191,11 @@ const RescheduleCourseSession = () => {
                             </div>
                         </div>
                         <div className="col-md-6">
-                            <label className="form-label fw-semibold">New Date *</label>
-                            <input
-                                type="date"
-                                name="newDate"
-                                value={formData.newDate}
-                                onChange={handleInputChange}
-                                className="form-control"
-                                required
-                            />
-                        </div>
-                        {/* ✅ NEW TIME FIELDS */}
-                        <div className="col-md-6">
-                            <label className="form-label fw-semibold">New Start Time *</label>
+                            <label className="form-label fw-semibold">Start Time *</label>
                             <input
                                 type="time"
-                                name="newStartTime"
-                                value={formData.newStartTime}
+                                name="startTime"
+                                value={formData.startTime}
                                 onChange={handleInputChange}
                                 className="form-control"
                                 required
@@ -261,11 +203,11 @@ const RescheduleCourseSession = () => {
                             />
                         </div>
                         <div className="col-md-6">
-                            <label className="form-label fw-semibold">New End Time *</label>
+                            <label className="form-label fw-semibold">End Time *</label>
                             <input
                                 type="time"
-                                name="newEndTime"
-                                value={formData.newEndTime}
+                                name="endTime"
+                                value={formData.endTime}
                                 onChange={handleInputChange}
                                 className="form-control"
                                 required
@@ -280,12 +222,12 @@ const RescheduleCourseSession = () => {
                                 value={formData.reason}
                                 onChange={handleInputChange}
                                 className="form-control"
-                                placeholder="e.g., Instructor unavailable"
+                                placeholder="e.g., Makeup class"
                             />
                         </div>
                         <div className="col-12">
                             <button type="submit" className="btn btn-primary w-100 py-2">
-                                ➕ Add Rescheduled Session
+                                ➕ Add Extra Session
                             </button>
                         </div>
                     </div>
@@ -316,35 +258,32 @@ const RescheduleCourseSession = () => {
                 </select>
             </div>
 
-            {/* List of Rescheduled Sessions */}
+            {/* List of Extra Sessions */}
             <div className="table-responsive">
                 <table className="table table-hover align-middle">
                     <thead className="table-light">
                         <tr>
                             <th>Course</th>
-                            <th>Original Date</th>
-                            <th>New Session</th> {/* ✅ Combined date + time */}
+                            <th>Date</th>
+                            <th>Time</th>
                             <th>Reason</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {sessions.length === 0 ? (
+                        {extraSessions.length === 0 ? (
                             <tr>
                                 <td colSpan="5" className="text-center text-muted py-3">
-                                    No rescheduled sessions found for this month
+                                    No extra sessions found for this month
                                 </td>
                             </tr>
                         ) : (
-                            sessions.map((s) => (
+                            extraSessions.map((s) => (
                                 <tr key={s._id}>
                                     <td>{getCourseName(s.course)}</td>
-                                    <td>{formatDate(s.originalDate)}</td>
+                                    <td>{formatDate(s.extraDate)}</td>
                                     <td>
-                                        {formatDate(s.newDate)}
-                                        <div className="text-muted small mt-1">
-                                            {formatTime(s.newStartTime)} - {formatTime(s.newEndTime)}
-                                        </div>
+                                        {formatTime(s.startTime)} - {formatTime(s.endTime)}
                                     </td>
                                     <td>{s.reason || '—'}</td>
                                     <td>
@@ -367,4 +306,4 @@ const RescheduleCourseSession = () => {
     );
 };
 
-export default RescheduleCourseSession;
+export default AddExtraSession;

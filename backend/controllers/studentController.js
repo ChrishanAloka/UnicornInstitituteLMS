@@ -4,6 +4,8 @@ const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
 const Course = require('../models/Course');
 const RescheduledSession = require('../models/RescheduledSession');
+const AbsentDay = require('../models/AbsentDay');
+const ExtraSession = require('../models/ExtraSession');
 
 // @desc    Search student by ID or name + check attendance for a date
 // @route   GET /api/auth/student/search?q=...&date=YYYY-MM-DD
@@ -67,6 +69,19 @@ exports.searchStudent = async (req, res) => {
       });
     }
 
+    // ─── STEP 1.5: Check for ABSENT DAYS on this date ───
+    const populatedAbsentDays = await AbsentDay.find({
+      absentDate: { $gte: startOfDay, $lt: endOfDay }
+    }).populate('course', 'courseName');
+    
+    const absentCourseIds = new Set(
+      populatedAbsentDays.map(a => a.course._id.toString())
+    );
+    const absentSessionInfo = populatedAbsentDays.map(a => ({
+      courseName: a.course.courseName,
+      reason: a.reason || 'Session cancelled'
+    }));
+
     // ─── STEP 2: Gather ALL course IDs active on this date ───
     const courseIdsSet = new Set();
 
@@ -79,19 +94,25 @@ exports.searchStudent = async (req, res) => {
         ]
       }
     }).select('_id');
-    regularCourses.forEach(c => courseIdsSet.add(c._id.toString()));
 
-    // B. Single-session courses (non-weekly) on this exact date
-    const singleSessionCourses = await Course.find({
-      courseStartDate: { $gte: startOfDay, $lt: endOfDay }
-    }).select('_id');
-    singleSessionCourses.forEach(c => courseIdsSet.add(c._id.toString()));
+    regularCourses.forEach(c => {
+      // ✅ ONLY include if NOT marked absent
+      if (!absentCourseIds.has(c._id.toString())) {
+        courseIdsSet.add(c._id.toString());
+      }
+    });
 
-    // C. Courses RESCHEDULED TO this date
+    // B. Courses RESCHEDULED TO this date (NOT affected by absent days)
     const rescheduledSessions = await RescheduledSession.find({
       newDate: { $gte: startOfDay, $lt: endOfDay }
     }).select('course');
     rescheduledSessions.forEach(s => courseIdsSet.add(s.course.toString()));
+
+    // C. EXTRA SESSIONS on this date (NOT affected by absent days) ✅
+    const extraSessions = await ExtraSession.find({
+      extraDate: { $gte: startOfDay, $lt: endOfDay }
+    }).select('course');
+    extraSessions.forEach(s => courseIdsSet.add(s.course.toString()));
 
     const courseIds = Array.from(courseIdsSet);
 
@@ -224,7 +245,9 @@ exports.searchStudent = async (req, res) => {
     return res.json({
       type: responseType,
       students: resultStudents,
-      originalSessions
+      originalSessions,
+      absentSessions: absentSessionInfo, // ✅ NEW: For absent day banner
+      hasExtraSessions: extraSessions.length > 0 // Optional: for frontend indicators
     });
 
   } catch (error) {

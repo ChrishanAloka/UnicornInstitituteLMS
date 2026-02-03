@@ -4,16 +4,28 @@ const Course = require('../models/Course');
 // POST /api/auth/sessions/reschedule
 exports.createRescheduledSession = async (req, res) => {
   try {
-    const { courseId, originalDate, newDate, reason } = req.body;
+    const { courseId, originalDate, newDate, newStartTime, newEndTime, reason } = req.body;
 
     // Validate course exists
     const course = await Course.findById(courseId);
     if (!course) return res.status(404).json({ error: 'Course not found' });
 
+    // ✅ Validate time fields
+    if (!newStartTime || !newEndTime) {
+      return res.status(400).json({ error: 'Start and end times are required' });
+    }
+
+    // Time order validation
+    if (newStartTime >= newEndTime) {
+      return res.status(400).json({ error: 'Start time must be before end time' });
+    }
+
     const session = new RescheduledSession({
       course: courseId,
       originalDate: new Date(originalDate),
       newDate: new Date(newDate),
+      newStartTime, // ✅ NEW
+      newEndTime,   // ✅ NEW
       reason
     });
 
@@ -37,8 +49,10 @@ exports.getRescheduledSessions = async (req, res) => {
     if (courseId) filter.course = courseId;
 
     if (month != null && year != null) {
+      // ✅ FIXED: Include entire last day of the month
       const start = new Date(parseInt(year), parseInt(month), 1);
-      const end = new Date(parseInt(year), parseInt(month) + 1, 0);
+      const end = new Date(parseInt(year), parseInt(month) + 1, 0, 23, 59, 59, 999);
+      
       filter.$or = [
         { originalDate: { $gte: start, $lte: end } },
         { newDate: { $gte: start, $lte: end } }
@@ -46,7 +60,7 @@ exports.getRescheduledSessions = async (req, res) => {
     }
 
     const sessions = await RescheduledSession.find(filter)
-      .populate('course', 'courseName')
+      .populate('course', 'courseName dayOfWeek timeFrom timeTo') // ✅ Include course times
       .sort({ originalDate: 1 });
 
     res.json(sessions);

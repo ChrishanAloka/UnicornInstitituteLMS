@@ -13,6 +13,8 @@ const Attendance = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [attendanceType, setAttendanceType] = useState("NORMAL"); // 'NORMAL', 'MOVED_AWAY', 'RESCHEDULED_SESSION'
   const [rescheduleContext, setRescheduleContext] = useState(null);
+  const [absentSessions, setAbsentSessions] = useState([]); // ✅ NEW: Track absent sessions
+  const [hasExtraSessions, setHasExtraSessions] = useState(false); // ✅ NEW: Track extra sessions
 
   const html5QrCodeRef = useRef(null);
   const isScannerActive = useRef(false);
@@ -33,6 +35,8 @@ const Attendance = () => {
       setStudents([]);
       setAttendanceType("NORMAL");
       setRescheduleContext(null);
+      setAbsentSessions([]);
+      setHasExtraSessions(false);
     }
   }, [input, selectedDate]);
 
@@ -45,6 +49,24 @@ const Attendance = () => {
     };
   }, []);
 
+  // Notify about absent sessions on current day
+  useEffect(() => {
+    if (
+      absentSessions.length > 0 &&
+      selectedDate === new Date().toISOString().split("T")[0]
+    ) {
+      toast.warn(
+        `⚠️ ${absentSessions.length} session(s) cancelled today. Students have been notified.`,
+        {
+          autoClose: false,
+          closeOnClick: false,
+          draggable: false,
+          position: "top-center",
+        }
+      );
+    }
+  }, [absentSessions, selectedDate]);
+
   const fetchStudents = async () => {
     setLoading(true);
     try {
@@ -52,6 +74,8 @@ const Attendance = () => {
       if (!token) {
         toast.error("Authentication required");
         setStudents([]);
+        setAbsentSessions([]);
+        setHasExtraSessions(false);
         return;
       }
 
@@ -65,6 +89,16 @@ const Attendance = () => {
       });
 
       const data = res.data;
+
+      // ✅ Handle absent sessions info
+      if (Array.isArray(data.absentSessions)) {
+        setAbsentSessions(data.absentSessions);
+      } else {
+        setAbsentSessions([]);
+      }
+
+      // ✅ Handle extra sessions flag
+      setHasExtraSessions(!!data.hasExtraSessions);
 
       if (data.type === "MOVED_AWAY") {
         setAttendanceType("MOVED_AWAY");
@@ -91,6 +125,8 @@ const Attendance = () => {
       setStudents([]);
       setAttendanceType("NORMAL");
       setRescheduleContext(null);
+      setAbsentSessions([]);
+      setHasExtraSessions(false);
       const msg = err.response?.data?.error || "Failed to load students";
       toast.error(msg);
     } finally {
@@ -157,6 +193,8 @@ const Attendance = () => {
   const handleInputClear = () => {
     setInput("");
     setStudents([]);
+    setAbsentSessions([]);
+    setHasExtraSessions(false);
   };
 
   const formatDateDisplay = (dateStr) => {
@@ -165,7 +203,15 @@ const Attendance = () => {
   };
 
   const getDayOfWeek = (dateStr) => {
-    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const days = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ];
     return days[new Date(dateStr).getDay()];
   };
 
@@ -173,7 +219,9 @@ const Attendance = () => {
 
   return (
     <div className="container py-4">
-      <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">Attendance</h2>
+      <h2 className="mb-4 text-primary fw-bold border-bottom pb-2">
+        Attendance
+      </h2>
 
       {/* Search Form */}
       <form
@@ -198,13 +246,16 @@ const Attendance = () => {
           <div className="col-md-3 d-flex align-items-end">
             <div className="w-100 text-center p-2 bg-light rounded">
               <small className="text-muted">
-                Selected: {selectedDate ? formatDateDisplay(selectedDate) : "—"}
+                Selected:{" "}
+                {selectedDate ? formatDateDisplay(selectedDate) : "—"}
               </small>
             </div>
           </div>
 
           <div className="col-md-7">
-            <label className="form-label fw-semibold">Student ID or Name (optional)</label>
+            <label className="form-label fw-semibold">
+              Student ID or Name (optional)
+            </label>
             <div className="input-group">
               <input
                 type="text"
@@ -238,7 +289,11 @@ const Attendance = () => {
           </div>
 
           <div className="col-md-2 d-flex align-items-end">
-            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+            <button
+              type="submit"
+              className="btn btn-primary w-100"
+              disabled={loading}
+            >
               {loading ? "Searching..." : "🔍 Search"}
             </button>
           </div>
@@ -257,14 +312,19 @@ const Attendance = () => {
         ></div>
 
         {isScanning && (
-          <button className="btn btn-secondary mt-2" type="button" onClick={stopScanner}>
+          <button
+            className="btn btn-secondary mt-2"
+            type="button"
+            onClick={stopScanner}
+          >
             Cancel Scan
           </button>
         )}
 
         {loading && (
           <div className="mt-2 text-muted">
-            <span className="spinner-border spinner-border-sm"></span> Loading...
+            <span className="spinner-border spinner-border-sm"></span>{" "}
+            Loading...
           </div>
         )}
       </form>
@@ -272,8 +332,10 @@ const Attendance = () => {
       {/* ─── MOVED AWAY MESSAGE ─── */}
       {attendanceType === "MOVED_AWAY" && rescheduleContext && (
         <div className="alert alert-warning mb-4">
-          <strong>⚠️ Session Rescheduled!</strong><br />
-          The class <strong>"{rescheduleContext.courseName}"</strong> scheduled for{" "}
+          <strong>⚠️ Session Rescheduled!</strong>
+          <br />
+          The class <strong>"{rescheduleContext.courseName}"</strong>{" "}
+          scheduled for{" "}
           <strong>{formatDateDisplay(selectedDate)}</strong> has been moved to{" "}
           <strong>{formatDateDisplay(rescheduleContext.newDate)}</strong>.
           <br />
@@ -281,7 +343,9 @@ const Attendance = () => {
           <button
             className="btn btn-primary btn-sm mt-2"
             onClick={() =>
-              setSelectedDate(rescheduleContext.newDate.toISOString().split("T")[0])
+              setSelectedDate(
+                rescheduleContext.newDate.toISOString().split("T")[0]
+              )
             }
           >
             Go to {formatDateDisplay(rescheduleContext.newDate)}
@@ -292,14 +356,17 @@ const Attendance = () => {
       {/* ─── RESCHEDULED SESSION BANNER ─── */}
       {attendanceType === "RESCHEDULED_SESSION" && rescheduleContext && (
         <div className="alert alert-info mb-4">
-          <strong>🔄 Rescheduled Session</strong><br />
+          <strong>🔄 Rescheduled Session</strong>
+          <br />
           This is a make-up class for:
           <ul className="mb-0 mt-2">
             {rescheduleContext.originalSessions.map((sess, i) => (
               <li key={i}>
                 <strong>{sess.courseName}</strong> (originally on{" "}
                 {formatDateDisplay(sess.originalDate)},{" "}
-                {new Date(sess.originalDate).toLocaleDateString("en-US", { weekday: "long" })}
+                {new Date(sess.originalDate).toLocaleDateString("en-US", {
+                  weekday: "long",
+                })}
                 )
               </li>
             ))}
@@ -307,109 +374,212 @@ const Attendance = () => {
         </div>
       )}
 
-      {/* ─── STUDENT TABLE ─── */}
-      {attendanceType !== "MOVED_AWAY" && students.length > 0 && !isScanning && (
-        <div className="mt-4">
-          {(() => {
-            const courseMap = new Map();
-            students.forEach((student) => {
-              // 🔒 Safeguard: ensure enrolledCourses exists and is an array
-              const enrollments = Array.isArray(student.enrolledCourses) 
-                ? student.enrolledCourses 
-                : [];
-
-              enrollments.forEach((enroll) => {
-                // 🔒 Also ensure enroll.course exists
-                if (!enroll?.course?._id) return;
-
-                const courseId = enroll.course._id.toString();
-                if (!courseMap.has(courseId)) {
-                  courseMap.set(courseId, { course: enroll.course, students: [] });
-                }
-                courseMap.get(courseId).students.push({ ...student, enrollment: enroll });
-              });
-            });
-
-            const groupedCourses = Array.from(courseMap.values()).sort((a, b) =>
-              a.course.courseName.localeCompare(b.course.courseName)
-            );
-
-            return groupedCourses.map(({ course, students }) => (
-              <div key={course._id} className="mb-5">
-                <div className="p-3 bg-primary text-white rounded-top">
-                  <h4 className="mb-1">{course.courseName}</h4>
-                  <div>
-                    <span className="me-3">
-                      📅 {getDayOfWeek(selectedDate).charAt(0).toUpperCase() + getDayOfWeek(selectedDate).slice(1)}
-                    </span>
-                    <span>⏰ {course.timeFrom} – {course.timeTo}</span>
-                  </div>
-                </div>
-                <div className="table-responsive border rounded-bottom">
-                  <table className="table table-hover align-middle mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Student ID</th>
-                        <th>Name</th>
-                        <th>Grade</th>
-                        <th>Enrollment Period</th>
-                        <th className="text-center">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {students.map(({ _id, studentId, name, currentGrade, enrollment }) => (
-                        <tr key={_id || studentId}>
-                          <td><strong>{studentId}</strong></td>
-                          <td>{name}</td>
-                          <td>{currentGrade || "—"}</td>
-                          <td>
-                            {enrollment?.startDate 
-                              ? formatDateDisplay(enrollment.startDate) 
-                              : "—"} →{" "}
-                            {enrollment?.endDate 
-                              ? formatDateDisplay(enrollment.endDate) 
-                              : "Ongoing"}
-                          </td>
-                          <td className="text-center">
-                            {enrollment?.isMarked ? (
-                              <span
-                                className={`badge ${
-                                  enrollment.status === "absent" ? "bg-danger" : "bg-success"
-                                }`}
-                              >
-                                {enrollment.status === "absent" ? "❌ Absent" : "✅ Present"}
-                              </span>
-                            ) : (
-                              <div className="d-flex gap-2 justify-content-center">
-                                <button
-                                  className="btn btn-sm btn-success"
-                                  onClick={() =>
-                                    handleMarkAttendance(studentId, course._id, "present")
-                                  }
-                                >
-                                  ✅ Present
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-danger"
-                                  onClick={() =>
-                                    handleMarkAttendance(studentId, course._id, "absent")
-                                  }
-                                >
-                                  ❌ Absent
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+      {/* ─── ABSENT SESSIONS BANNER ─── */}
+      {absentSessions.length > 0 && (
+        <div className="alert alert-danger mb-4 border-2 border-danger">
+          <div className="d-flex align-items-start">
+            <i className="bi bi-x-circle-fill fs-4 me-3 mt-1 text-danger"></i>
+            <div>
+              <strong className="fs-5">🚫 Cancelled Sessions Today</strong>
+              <ul className="mt-2 mb-0 ps-3">
+                {absentSessions.map((sess, i) => (
+                  <li key={i} className="text-dark fw-medium">
+                    <strong>{sess.courseName}</strong>
+                    {sess.reason && (
+                      <span className="text-muted ms-2">
+                        ({sess.reason})
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2 small text-muted">
+                <i className="bi bi-info-circle me-1"></i>
+                Attendance will not be recorded for cancelled sessions.
+                Students have been notified.
               </div>
-            ));
-          })()}
+            </div>
+          </div>
         </div>
       )}
+
+      {/* ─── EXTRA SESSION INDICATOR ─── */}
+      {hasExtraSessions && absentSessions.length === 0 && (
+        <div className="alert alert-success mb-4 border-2 border-success">
+          <div className="d-flex align-items-start">
+            <i className="bi bi-star-fill fs-4 me-3 mt-1 text-success"></i>
+            <div>
+              <strong className="fs-5">⭐ Extra Session Today!</strong>
+              <p className="mb-0 mt-1">
+                Additional session(s) scheduled. Attendance will be recorded
+                normally.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── STUDENT TABLE ─── */}
+      {attendanceType !== "MOVED_AWAY" &&
+        students.length > 0 &&
+        !isScanning && (
+          <div className="mt-4">
+            {(() => {
+              const courseMap = new Map();
+              students.forEach((student) => {
+                // 🔒 Safeguard: ensure enrolledCourses exists and is an array
+                const enrollments = Array.isArray(student.enrolledCourses)
+                  ? student.enrolledCourses
+                  : [];
+
+                enrollments.forEach((enroll) => {
+                  // 🔒 Also ensure enroll.course exists
+                  if (!enroll?.course?._id) return;
+
+                  const courseId = enroll.course._id.toString();
+                  if (!courseMap.has(courseId)) {
+                    courseMap.set(courseId, {
+                      course: enroll.course,
+                      students: [],
+                    });
+                  }
+                  courseMap
+                    .get(courseId)
+                    .students.push({ ...student, enrollment: enroll });
+                });
+              });
+
+              const groupedCourses = Array.from(courseMap.values()).sort(
+                (a, b) =>
+                  a.course.courseName.localeCompare(b.course.courseName)
+              );
+
+              return groupedCourses.map(({ course, students }) => (
+                <div key={course._id} className="mb-5">
+                  <div
+                    className={`p-3 text-white rounded-top ${
+                      absentSessions.some(
+                        (s) => s.courseName === course.courseName
+                      )
+                        ? "bg-danger"
+                        : hasExtraSessions
+                        ? "bg-success"
+                        : "bg-primary"
+                    }`}
+                  >
+                    <h4 className="mb-1 d-flex align-items-center">
+                      {hasExtraSessions && (
+                        <span className="me-2">
+                          <i className="bi bi-star-fill"></i>
+                        </span>
+                      )}
+                      {course.courseName}
+                      {absentSessions.some(
+                        (s) => s.courseName === course.courseName
+                      ) && (
+                        <span className="ms-2 badge bg-light text-danger">
+                          <i className="bi bi-x-circle me-1"></i>Cancelled
+                        </span>
+                      )}
+                    </h4>
+                    <div>
+                      <span className="me-3">
+                        📅{" "}
+                        {getDayOfWeek(selectedDate).charAt(0).toUpperCase() +
+                          getDayOfWeek(selectedDate).slice(1)}
+                      </span>
+                      <span>
+                        ⏰ {course.timeFrom} – {course.timeTo}
+                      </span>
+                      {hasExtraSessions && (
+                        <span className="ms-2 badge bg-light text-success">
+                          Extra Session
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="table-responsive border rounded-bottom">
+                    <table className="table table-hover align-middle mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Student ID</th>
+                          <th>Name</th>
+                          <th>Grade</th>
+                          <th>Enrollment Period</th>
+                          <th className="text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {students.map(
+                          ({ _id, studentId, name, currentGrade, enrollment }) => (
+                            <tr key={_id || studentId}>
+                              <td>
+                                <strong>{studentId}</strong>
+                              </td>
+                              <td>{name}</td>
+                              <td>{currentGrade || "—"}</td>
+                              <td>
+                                {enrollment?.startDate
+                                  ? formatDateDisplay(enrollment.startDate)
+                                  : "—"}{" "}
+                                →{" "}
+                                {enrollment?.endDate
+                                  ? formatDateDisplay(enrollment.endDate)
+                                  : "Ongoing"}
+                              </td>
+                              <td className="text-center">
+                                {enrollment?.isMarked ? (
+                                  <span
+                                    className={`badge ${
+                                      enrollment.status === "absent"
+                                        ? "bg-danger"
+                                        : "bg-success"
+                                    }`}
+                                  >
+                                    {enrollment.status === "absent"
+                                      ? "❌ Absent"
+                                      : "✅ Present"}
+                                  </span>
+                                ) : (
+                                  <div className="d-flex gap-2 justify-content-center">
+                                    <button
+                                      className="btn btn-sm btn-success"
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          studentId,
+                                          course._id,
+                                          "present"
+                                        )
+                                      }
+                                    >
+                                      ✅ Present
+                                    </button>
+                                    <button
+                                      className="btn btn-sm btn-danger"
+                                      onClick={() =>
+                                        handleMarkAttendance(
+                                          studentId,
+                                          course._id,
+                                          "absent"
+                                        )
+                                      }
+                                    >
+                                      ❌ Absent
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
 
       {/* Empty States */}
       {!loading &&
@@ -430,11 +600,13 @@ const Attendance = () => {
           </div>
         )}
 
-      {!loading && students.length === 0 && input.trim().length > 0 && (
-        <div className="alert alert-warning mt-4">
-          No student found matching "{input}"
-        </div>
-      )}
+      {!loading &&
+        students.length === 0 &&
+        input.trim().length > 0 && (
+          <div className="alert alert-warning mt-4">
+            No student found matching "{input}"
+          </div>
+        )}
 
       <ToastContainer position="top-right" autoClose={3000} />
     </div>

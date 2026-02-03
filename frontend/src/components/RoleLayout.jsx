@@ -10,6 +10,7 @@ import {
   FaBookOpen, FaClipboardList, FaUserCircle, FaPercentage, FaTruckLoading, 
   FaFirstOrder, FaMotorcycle, FaUserClock, FaCashRegister, FaBookReader,
   FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun, FaUserGraduate,FaChalkboardTeacher,FaBook, FaUserCheck,FaUserPlus, FaChartLine, FaCalendarPlus, FaMoneyCheckAlt as FaPayment,
+  FaPlusCircle, FaTimesCircle
 } from "react-icons/fa";
 import NotificationCenter from "./NotificationCenter";
 import "./AppleRoleLayout.css";
@@ -151,6 +152,8 @@ const RoleLayout = () => {
           { to: "/user/instructor-registration", label: "Instructor Registration", icon: FaChalkboardTeacher },
           { to: "/user/course-registration", label: "Course Registration", icon: FaBook },
           { to: "/user/reschedule-courseSession", label: "Reschedule Courses", icon: FaCalendarPlus },
+          { to: "/user/addextra", label: "Add Extra Session", icon: FaPlusCircle },      // NEW
+          { to: "/user/addabsent", label: "Mark Absent Session", icon: FaTimesCircle },
           { to: "/user/attendance", label: "Mark Attendance", icon: FaUserCheck },
           { to: "/user/student-profile", label: "Student Profile", icon: FaUserPlus },
           

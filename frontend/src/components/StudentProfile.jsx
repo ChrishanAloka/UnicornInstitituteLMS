@@ -341,7 +341,7 @@ const StudentProfile = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString();
+    return new Date(dateStr).toLocaleDateString('en-GB');
   };
 
   return (
@@ -464,7 +464,7 @@ const StudentProfile = () => {
                       <h6 className="mb-1">{s.name}</h6>
                       <p className="text-muted small mb-1">ID: {s.studentId}</p>
                       <p className="text-muted small mb-0">
-                        Updated: {new Date(s.updatedAt).toLocaleDateString()}
+                        Updated: {new Date(s.updatedAt).toLocaleDateString('en-GB')}
                       </p>
                     </div>
                   </div>
@@ -519,7 +519,7 @@ const StudentProfile = () => {
             <div className="col-md-6">
               <p><strong>ID:</strong> {student.studentId}</p>
               <p><strong>Name:</strong> {student.name}</p>
-              <p><strong>Birthday:</strong> {new Date(student.birthday).toLocaleDateString()}</p>
+              <p><strong>Birthday:</strong> {new Date(student.birthday).toLocaleDateString('en-GB')}</p>
               <p><strong>Phone:</strong> {student.phoneNo}</p>
             </div>
             <div className="col-md-6">
@@ -716,9 +716,9 @@ const StudentProfile = () => {
                     <tbody>
                       {payments.map(payment => (
                         <tr key={payment._id}>
-                          <td>{new Date(payment.paymentDate).toLocaleDateString()}</td>
+                          <td>{new Date(payment.paymentDate).toLocaleDateString('en-GB')}</td>
                           <td>{payment.course?.courseName || "—"} </td>
-                          <td>${payment.amount.toFixed(2)}</td>
+                          <td>Rs. {payment.amount.toFixed(2)}</td>
                           <td>{payment.method || "—"}</td>
                           <td>{payment.notes || "—"}</td>
                         </tr>
