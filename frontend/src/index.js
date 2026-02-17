@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 // import { AuthProvider } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/auth-context";
+import { PWAProvider } from "./context/PWAContext";
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import App from "./App";
 
@@ -13,7 +14,9 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <PWAProvider>
+          <App />
+        </PWAProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

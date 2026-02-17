@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import InstallPWAButton from "./InstallPWAButton";
 import LogoImage from "../upload/logo.png";
 
 const Home = () => {
@@ -11,7 +12,7 @@ const Home = () => {
       }}
     >
       <div
-        className="p-4 p-md-5 shadow-lg"
+        className="p-4 p-md-5 shadow-lg position-relative"
         style={{
           width: "100%",
           maxWidth: "620px",
@@ -21,6 +22,9 @@ const Home = () => {
           border: "1px solid rgba(255,255,255,0.3)",
         }}
       >
+        <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+          <InstallPWAButton />
+        </div>
         {/* Logo */}
         <div className="mb-3 d-flex justify-content-center">
           <div

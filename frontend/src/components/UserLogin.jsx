@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/auth-context";
 import { motion } from "framer-motion";
+import InstallPWAButton from "./InstallPWAButton";
 
 const UserLogin = () => {
   const [email, setEmail] = useState("");
@@ -43,8 +44,12 @@ const UserLogin = () => {
       style={{
         background: "linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%)",
         padding: "20px",
+        position: 'relative'
       }}
     >
+      <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+        <InstallPWAButton />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}

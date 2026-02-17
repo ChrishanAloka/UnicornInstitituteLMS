@@ -7,12 +7,13 @@ import {
   FaBars, FaSignOutAlt, FaTachometerAlt, FaUsers, FaKey, FaFileInvoice,
   FaChartBar, FaUserTie, FaCalendarCheck, FaTruck, FaMoneyBillWave,
   FaMoneyCheckAlt, FaUtensils, FaDollarSign, FaShoppingCart, FaHistory,
-  FaBookOpen, FaClipboardList, FaUserCircle, FaPercentage, FaTruckLoading, 
+  FaBookOpen, FaClipboardList, FaUserCircle, FaPercentage, FaTruckLoading,
   FaFirstOrder, FaMotorcycle, FaUserClock, FaCashRegister, FaBookReader,
-  FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun, FaUserGraduate,FaChalkboardTeacher,FaBook, FaUserCheck,FaUserPlus, FaChartLine, FaCalendarPlus, FaMoneyCheckAlt as FaPayment,
+  FaCoins, FaWallet, FaPrint, FaUserTag, FaBell, FaSearch, FaTimes, FaMoon, FaSun, FaUserGraduate, FaChalkboardTeacher, FaBook, FaUserCheck, FaUserPlus, FaChartLine, FaCalendarPlus, FaMoneyCheckAlt as FaPayment,
   FaPlusCircle, FaTimesCircle
 } from "react-icons/fa";
 import NotificationCenter from "./NotificationCenter";
+import InstallPWAButton from "./InstallPWAButton";
 import "./AppleRoleLayout.css";
 
 const RoleLayout = () => {
@@ -24,7 +25,7 @@ const RoleLayout = () => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
   });
-  
+
   const { user, logout } = useAuth();
   const countdown = useTokenCountdown();
   const location = useLocation();
@@ -156,11 +157,11 @@ const RoleLayout = () => {
           { to: "/user/addabsent", label: "Mark Absent Session", icon: FaTimesCircle },
           { to: "/user/attendance", label: "Mark Attendance", icon: FaUserCheck },
           { to: "/user/student-profile", label: "Student Profile", icon: FaUserPlus },
-          
+
           { divider: true },
           { to: "/user/track-attendance", label: "Track Attendance", icon: FaChartLine },
           { to: "/user/track-payment", label: "Track Payments", icon: FaPayment }
-          
+
         ];
       default:
         return [];
@@ -222,10 +223,10 @@ const RoleLayout = () => {
             if (item.divider) {
               return !sidebarCollapsed && <div key={`divider-${index}`} className="apple-divider" />;
             }
-            
+
             const Icon = item.icon;
             const isActive = location.pathname === item.to;
-            
+
             return (
               <Link
                 key={item.to}
@@ -278,13 +279,16 @@ const RoleLayout = () => {
 
           <div className="apple-header-right">
             {/* Dark Mode Toggle */}
-            <button 
-              onClick={toggleDarkMode} 
+            <button
+              onClick={toggleDarkMode}
               className="apple-theme-toggle"
               title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
               {darkMode ? <FaSun /> : <FaMoon />}
             </button>
+
+            {/* Install PWA Button */}
+            <InstallPWAButton className="me-2" />
 
             {/* Notifications */}
             <div className="apple-notification-wrapper">
