@@ -23,7 +23,7 @@ const SalaryPage = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/employees", {
+      const res = await axios.get("http://localhost:5000/api/auth/employees", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEmployees(res.data);
@@ -35,7 +35,7 @@ const SalaryPage = () => {
   const fetchSalaries = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/salaries", {
+      const res = await axios.get("http://localhost:5000/api/auth/salaries", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSalaries(res.data);
@@ -77,7 +77,7 @@ const SalaryPage = () => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.post(
-      "https://unicorninstititutelms.onrender.com/api/auth/salary/add",
+      "http://localhost:5000/api/auth/salary/add",
       payload,
       {
         headers: { Authorization: `Bearer ${token}` }

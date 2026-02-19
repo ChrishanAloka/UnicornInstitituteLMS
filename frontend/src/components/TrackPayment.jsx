@@ -31,7 +31,7 @@ const TrackPayment = () => {
         year: activeYear,
         courseName: searchTerm
       });
-      const url = `https://unicorninstititutelms.onrender.com/api/auth/course/track-payments?${params}`;
+      const url = `http://localhost:5000/api/auth/course/track-payments?${params}`;
       
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },

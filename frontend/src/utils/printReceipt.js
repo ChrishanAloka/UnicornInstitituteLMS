@@ -25,7 +25,7 @@ export const printReceiptToBoth = async (receiptHTML) => {
   let savedPrinters = [];
   try {
     toast.info("📥 Loading saved printers...");
-    const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/printers", {
+    const res = await axios.get("http://localhost:5000/api/auth/printers", {
       headers: { Authorization: `Bearer ${token}` }
     });
     savedPrinters = res.data;

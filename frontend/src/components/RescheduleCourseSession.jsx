@@ -33,7 +33,7 @@ const RescheduleCourseSession = () => {
     const fetchCourses = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('https://unicorninstititutelms.onrender.com/api/auth/course', {
+            const res = await axios.get('http://localhost:5000/api/auth/course', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCourses(res.data);
@@ -46,7 +46,7 @@ const RescheduleCourseSession = () => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(
-                `https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule?month=${filterMonth}&year=${filterYear}`,
+                `http://localhost:5000/api/auth/sessions/reschedule?month=${filterMonth}&year=${filterYear}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setSessions(res.data);
@@ -109,7 +109,7 @@ const RescheduleCourseSession = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.post(
-                'https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule',
+                'http://localhost:5000/api/auth/sessions/reschedule',
                 formData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -134,7 +134,7 @@ const RescheduleCourseSession = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.delete(
-                `https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule/${id}`,
+                `http://localhost:5000/api/auth/sessions/reschedule/${id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success('Removed');

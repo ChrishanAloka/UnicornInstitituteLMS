@@ -11,7 +11,7 @@ const ResetPassword = () => {
 
   const handleVerifyKey = async () => {
     try {
-      await axios.post("https://unicorninstititutelms.onrender.com/api/auth/verify-reset-key", { key });
+      await axios.post("http://localhost:5000/api/auth/verify-reset-key", { key });
       setStep(2);
     } catch (err) {
       alert(err.response?.data?.message || "Invalid or expired key");
@@ -20,7 +20,7 @@ const ResetPassword = () => {
 
   const handleResetPassword = async () => {
     try {
-      await axios.post("https://unicorninstititutelms.onrender.com/api/auth/reset-password", { email, key, newPassword });
+      await axios.post("http://localhost:5000/api/auth/reset-password", { email, key, newPassword });
       alert("Password reset successful!");
       navigate("/");
     } catch (err) {

@@ -10,7 +10,7 @@ const CurrencySettings = () => {
     const fetchCurrency = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/settings/currency", {
+        const res = await axios.get("http://localhost:5000/api/auth/settings/currency", {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -30,7 +30,7 @@ const CurrencySettings = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        "https://unicorninstititutelms.onrender.com/api/auth/settings/currency",
+        "http://localhost:5000/api/auth/settings/currency",
         { currency, symbol },
         {
           headers: { Authorization: `Bearer ${token}` }

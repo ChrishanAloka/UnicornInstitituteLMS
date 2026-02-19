@@ -50,7 +50,7 @@ const StudentProfile = () => {
         try {
           const token = localStorage.getItem("token");
           const res = await axios.get(
-            `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}`,
+            `http://localhost:5000/api/auth/students/${studentId}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           setStudent(res.data);
@@ -76,7 +76,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/recent`,
+        `http://localhost:5000/api/auth/students/recent`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { page, limit: 12 }
@@ -99,7 +99,7 @@ const StudentProfile = () => {
   const fetchAllCourses = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/course", {
+      const res = await axios.get("http://localhost:5000/api/auth/course", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCourses(res.data);
@@ -113,7 +113,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/payments`,
+        `http://localhost:5000/api/auth/students/${studentId}/payments`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setPayments(res.data);
@@ -132,7 +132,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/search?q=${encodeURIComponent(searchTerm)}`,
+        `http://localhost:5000/api/auth/students/search?q=${encodeURIComponent(searchTerm)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data) {
@@ -234,7 +234,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/payments`,
+        `http://localhost:5000/api/auth/students/payments`,
         {
           studentId: student._id,
           courseId,
@@ -276,7 +276,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/enroll/${student._id}`,
+        `http://localhost:5000/api/auth/students/enroll/${student._id}`,
         {
           courseId,
           startDate: dates.startDate || undefined,
@@ -309,7 +309,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/enrollments/${enrollmentId}`,
+        `http://localhost:5000/api/auth/students/${studentId}/enrollments/${enrollmentId}`,
         {
           startDate: editDates.startDate || undefined,
           endDate: editDates.endDate || undefined
@@ -329,7 +329,7 @@ const StudentProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.delete(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/unenroll/${enrollmentId}`,
+        `http://localhost:5000/api/auth/students/${studentId}/unenroll/${enrollmentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setEnrolledCourses(res.data.enrolledCourses);
@@ -446,7 +446,7 @@ const StudentProfile = () => {
                           try {
                             const token = localStorage.getItem("token");
                             const res = await axios.get(
-                              `https://unicorninstititutelms.onrender.com/api/auth/students/${s._id}`,
+                              `http://localhost:5000/api/auth/students/${s._id}`,
                               { headers: { Authorization: `Bearer ${token}` } }
                             );
                             setStudent(res.data);

@@ -30,7 +30,7 @@ const Signup = () => {
     setIsLoading(true); // 👈 Start loading
 
     try {
-      await axios.post("https://unicorninstititutelms.onrender.com/api/auth/signup", {
+      await axios.post("http://localhost:5000/api/auth/signup", {
         name,
         email,
         password,

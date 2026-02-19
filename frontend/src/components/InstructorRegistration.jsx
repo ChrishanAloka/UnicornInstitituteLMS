@@ -20,7 +20,7 @@ const InstructorRegistration = () => {
   const fetchInstructors = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/instructor", {
+      const res = await axios.get("http://localhost:5000/api/auth/instructor", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setInstructors(res.data);
@@ -43,7 +43,7 @@ const InstructorRegistration = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "https://unicorninstititutelms.onrender.com/api/auth/instructor/register",
+        "http://localhost:5000/api/auth/instructor/register",
         newInstructor,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -79,7 +79,7 @@ const InstructorRegistration = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `https://unicorninstititutelms.onrender.com/api/auth/instructor/${editingInstructor}`,
+        `http://localhost:5000/api/auth/instructor/${editingInstructor}`,
         editData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -95,7 +95,7 @@ const InstructorRegistration = () => {
   const handleDelete = (id) => {
     if (!window.confirm("Delete instructor?")) return;
     axios
-      .delete(`https://unicorninstititutelms.onrender.com/api/auth/instructor/${id}`, {
+      .delete(`http://localhost:5000/api/auth/instructor/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       })
       .then(() => {

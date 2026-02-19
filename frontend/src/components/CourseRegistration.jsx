@@ -91,7 +91,7 @@ const CourseRegistration = () => {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.get(
-                "https://unicorninstititutelms.onrender.com/api/auth/students",
+                "http://localhost:5000/api/auth/students",
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setAllStudents(res.data);
@@ -109,7 +109,7 @@ const CourseRegistration = () => {
             const token = localStorage.getItem("token");
             // Assuming your backend has an endpoint like: GET /api/auth/course/:id/students
             const res = await axios.get(
-                `https://unicorninstititutelms.onrender.com/api/auth/course/${courseId}/students`,
+                `http://localhost:5000/api/auth/course/${courseId}/students`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             // Expected response: array of student objects with enrollment info
@@ -127,7 +127,7 @@ const CourseRegistration = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/course", {
+            const res = await axios.get("http://localhost:5000/api/auth/course", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCourses(res.data);
@@ -141,7 +141,7 @@ const CourseRegistration = () => {
     const fetchInstructors = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/instructor", {
+            const res = await axios.get("http://localhost:5000/api/auth/instructor", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setInstructors(res.data);
@@ -155,7 +155,7 @@ const CourseRegistration = () => {
             setLoadingReschedules(true);
             const token = localStorage.getItem("token");
             const res = await axios.get(
-                "https://unicorninstititutelms.onrender.com/api/auth/sessions/reschedule",
+                "http://localhost:5000/api/auth/sessions/reschedule",
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setRescheduledSessions(res.data);
@@ -173,7 +173,7 @@ const CourseRegistration = () => {
             setLoadingExtraSessions(true);
             const token = localStorage.getItem("token");
             const res = await axios.get(
-                "https://unicorninstititutelms.onrender.com/api/auth/sessions/extra",
+                "http://localhost:5000/api/auth/sessions/extra",
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setExtraSessions(res.data);
@@ -190,7 +190,7 @@ const CourseRegistration = () => {
             setLoadingAbsentDays(true);
             const token = localStorage.getItem("token");
             const res = await axios.get(
-                "https://unicorninstititutelms.onrender.com/api/auth/sessions/absent",
+                "http://localhost:5000/api/auth/sessions/absent",
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setAbsentDays(res.data);
@@ -223,7 +223,7 @@ const CourseRegistration = () => {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                "https://unicorninstititutelms.onrender.com/api/auth/course/register",
+                "http://localhost:5000/api/auth/course/register",
                 payload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -292,7 +292,7 @@ const CourseRegistration = () => {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.put(
-                `https://unicorninstititutelms.onrender.com/api/auth/course/${editingCourse}`,
+                `http://localhost:5000/api/auth/course/${editingCourse}`,
                 payload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -307,7 +307,7 @@ const CourseRegistration = () => {
     const handleDelete = (id) => {
         if (!window.confirm("Delete course?")) return;
         axios
-            .delete(`https://unicorninstititutelms.onrender.com/api/auth/course/${id}`, {
+            .delete(`http://localhost:5000/api/auth/course/${id}`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
             })
             .then(() => {
@@ -328,7 +328,7 @@ const CourseRegistration = () => {
         for (const studentId of selectedStudentIds) {
             try {
                 await axios.post(
-                    `https://unicorninstititutelms.onrender.com/api/auth/students/enroll/${studentId}`,
+                    `http://localhost:5000/api/auth/students/enroll/${studentId}`,
                     {
                         courseId,
                         startDate: startDate || undefined,
@@ -371,7 +371,7 @@ const CourseRegistration = () => {
             if (!enrollmentId) continue;
             try {
                 await axios.delete(
-                    `https://unicorninstititutelms.onrender.com/api/auth/students/${studentId}/unenroll/${enrollmentId}`,
+                    `http://localhost:5000/api/auth/students/${studentId}/unenroll/${enrollmentId}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 successCount++;

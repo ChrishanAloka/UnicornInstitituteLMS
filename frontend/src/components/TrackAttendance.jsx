@@ -29,7 +29,7 @@ const TrackAttendance = () => {
   const fetchStudents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://unicorninstititutelms.onrender.com/api/auth/students', {
+      const res = await axios.get('http://localhost:5000/api/auth/students', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStudents(res.data);
@@ -41,7 +41,7 @@ const TrackAttendance = () => {
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://unicorninstititutelms.onrender.com/api/auth/course', {
+      const res = await axios.get('http://localhost:5000/api/auth/course', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCourses(res.data);
@@ -54,7 +54,7 @@ const TrackAttendance = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      let url = `https://unicorninstititutelms.onrender.com/api/auth/attendance/track?month=${filter.month}&year=${filter.year}`;
+      let url = `http://localhost:5000/api/auth/attendance/track?month=${filter.month}&year=${filter.year}`;
       
       if (filter.studentId) url += `&studentId=${filter.studentId}`;
       if (filter.courseId) url += `&courseId=${filter.courseId}`;
@@ -359,7 +359,7 @@ const TrackAttendance = () => {
                             // Fetch detailed attendance
                             const token = localStorage.getItem('token');
                             const res = await axios.get(
-                              `https://unicorninstititutelms.onrender.com/api/auth/attendance/details?studentId=${selectedStudent.studentId}&courseId=${record.course._id}&month=${filter.month}&year=${filter.year}`,
+                              `http://localhost:5000/api/auth/attendance/details?studentId=${selectedStudent.studentId}&courseId=${record.course._id}&month=${filter.month}&year=${filter.year}`,
                               { headers: { Authorization: `Bearer ${token}` } }
                             );
                             console.log('Detailed Attendance:', res.data);

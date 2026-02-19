@@ -10,7 +10,7 @@
 //   const fetchNotifications = async () => {
 //     try {
 //       const token = localStorage.getItem("token");
-//       const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/notifications", {
+//       const res = await axios.get("http://localhost:5000/api/auth/notifications", {
 //         headers: { Authorization: `Bearer ${token}` }
 //       });
 
@@ -35,7 +35,7 @@
 //       const role = localStorage.getItem("userRole") || "cashier";
 
 //       await axios.post(
-//         "https://unicorninstititutelms.onrender.com/api/auth/notifications/send",
+//         "http://localhost:5000/api/auth/notifications/send",
 //         {
 //           userId, 
 //           role, 
@@ -61,7 +61,7 @@
 //     try {
 //       const token = localStorage.getItem("token");
 //       await axios.post(
-//         "https://unicorninstititutelms.onrender.com/api/auth/notifications/mark-read",
+//         "http://localhost:5000/api/auth/notifications/mark-read",
 //         { notificationId: notifId },
 //         {
 //           headers: { Authorization: `Bearer ${token}` }
@@ -82,7 +82,7 @@
 //       const role = localStorage.getItem("userRole") || "cashier";
 
 //       await axios.post(
-//         "https://unicorninstititutelms.onrender.com/api/auth/notifications/mark-all-read",
+//         "http://localhost:5000/api/auth/notifications/mark-all-read",
 //         { role },
 //         {
 //           headers: { Authorization: `Bearer ${token}` }

@@ -79,7 +79,7 @@ const Attendance = () => {
         return;
       }
 
-      let url = `https://unicorninstititutelms.onrender.com/api/auth/students/search?date=${selectedDate}`;
+      let url = `http://localhost:5000/api/auth/students/search?date=${selectedDate}`;
       if (input.trim()) {
         url += `&q=${encodeURIComponent(input.trim())}`;
       }
@@ -140,7 +140,7 @@ const Attendance = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "https://unicorninstititutelms.onrender.com/api/auth/attendance/mark",
+        "http://localhost:5000/api/auth/attendance/mark",
         {
           studentId,
           courseId,

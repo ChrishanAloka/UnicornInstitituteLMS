@@ -15,7 +15,7 @@ const ClassTimetable = () => {
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://unicorninstititutelms.onrender.com/api/auth/course", {
+      const res = await axios.get("http://localhost:5000/api/auth/course", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCourses(res.data);

@@ -81,7 +81,7 @@ const StudentRegistration = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "https://unicorninstititutelms.onrender.com/api/auth/students/registered",
+        "http://localhost:5000/api/auth/students/registered",
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { page, limit: 10 }
@@ -197,7 +197,7 @@ const StudentRegistration = () => {
       };
 
       const res = await axios.post(
-        "https://unicorninstititutelms.onrender.com/api/auth/students/register",
+        "http://localhost:5000/api/auth/students/register",
         payload,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -297,7 +297,7 @@ const StudentRegistration = () => {
       };
       
       const res = await axios.put(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/${editingStudent}`,
+        `http://localhost:5000/api/auth/students/${editingStudent}`,
         payload,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -322,7 +322,7 @@ const StudentRegistration = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `https://unicorninstititutelms.onrender.com/api/auth/students/${id}`,
+        `http://localhost:5000/api/auth/students/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setStudents(students.filter((s) => s._id !== id));

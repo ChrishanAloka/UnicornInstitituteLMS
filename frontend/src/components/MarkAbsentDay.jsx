@@ -30,7 +30,7 @@ const MarkAbsentDay = () => {
     const fetchCourses = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('https://unicorninstititutelms.onrender.com/api/auth/course', {
+            const res = await axios.get('http://localhost:5000/api/auth/course', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCourses(res.data);
@@ -43,7 +43,7 @@ const MarkAbsentDay = () => {
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get(
-                `https://unicorninstititutelms.onrender.com/api/auth/sessions/absent?month=${filterMonth}&year=${filterYear}`,
+                `http://localhost:5000/api/auth/sessions/absent?month=${filterMonth}&year=${filterYear}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setAbsentDays(res.data);
@@ -77,7 +77,7 @@ const MarkAbsentDay = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.post(
-                'https://unicorninstititutelms.onrender.com/api/auth/sessions/absent',
+                'http://localhost:5000/api/auth/sessions/absent',
                 formData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -95,7 +95,7 @@ const MarkAbsentDay = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.delete(
-                `https://unicorninstititutelms.onrender.com/api/auth/sessions/absent/${id}`,
+                `http://localhost:5000/api/auth/sessions/absent/${id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success('Removed');
